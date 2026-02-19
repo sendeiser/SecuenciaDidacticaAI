@@ -2,11 +2,11 @@ import { Page, Text, View, Document, StyleSheet, Image, Link } from '@react-pdf/
 
 const styles = StyleSheet.create({
     page: {
-        padding: 50,
+        padding: 72, // 1 inch approx
         fontSize: 10,
         fontFamily: 'Helvetica',
         color: '#000',
-        lineHeight: 1.4,
+        lineHeight: 1.6,
     },
     topBorder: {
         borderTopWidth: 2,
@@ -28,14 +28,19 @@ const styles = StyleSheet.create({
     sectionHeading: {
         fontSize: 11,
         fontWeight: 'bold',
-        marginTop: 15,
-        marginBottom: 8,
+        marginTop: 18,
+        marginBottom: 10,
+        color: '#1e293b',
+        textAlign: 'left',
     },
     subSectionHeading: {
         fontSize: 10,
         fontWeight: 'bold',
-        marginTop: 10,
-        marginBottom: 5,
+        fontStyle: 'italic',
+        marginTop: 12,
+        marginBottom: 6,
+        color: '#334155',
+        textAlign: 'left',
     },
     row: {
         flexDirection: 'row',
@@ -61,11 +66,11 @@ const styles = StyleSheet.create({
     },
     listText: {
         flex: 1,
-        textAlign: 'justify',
+        textAlign: 'left',
     },
     paragraph: {
-        marginBottom: 8,
-        textAlign: 'justify',
+        marginBottom: 10,
+        textAlign: 'left',
     },
     italics: {
         fontStyle: 'italic',
@@ -126,8 +131,52 @@ const styles = StyleSheet.create({
         borderTopColor: '#ccc',
         paddingTop: 10,
         textAlign: 'center',
-        fontSize: 8,
-        color: '#666',
+        fontSize: 7,
+        color: '#94a3b8',
+    },
+    // Formal Class Design
+    classCard: {
+        marginBottom: 20,
+        padding: 12,
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
+        borderRadius: 8,
+    },
+    classHeader: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#064e3b',
+        backgroundColor: '#f0fdf4',
+        padding: 5,
+        marginBottom: 8,
+        borderRadius: 4,
+        borderLeftWidth: 3,
+        borderLeftColor: '#10b981',
+    },
+    sectionBox: {
+        marginBottom: 12,
+        padding: 10,
+        backgroundColor: '#fafafa',
+        borderLeftWidth: 2,
+        borderLeftColor: '#cbd5e1',
+        borderRadius: 4,
+    },
+    activityBlock: {
+        marginTop: 6,
+        padding: 8,
+        backgroundColor: '#ffffff',
+        borderWidth: 0.5,
+        borderColor: '#e2e8f0',
+        borderRadius: 4,
+    },
+    sectionLabel: {
+        fontSize: 7.5,
+        fontWeight: 'bold',
+        color: '#475569',
+        textTransform: 'uppercase',
+        marginBottom: 6,
+        letterSpacing: 0.5,
     }
 });
 
@@ -174,9 +223,9 @@ const PlantillaETA = ({ data }) => {
                     </Text>
                 </View>
 
-                {/* 2. Puntos de partida */}
+                {/* 1. Puntos de partida */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionHeading}>2. Puntos de partida</Text>
+                    <Text style={styles.sectionHeading}>1. Puntos de partida</Text>
                     {data.puntos_partida.map((punto, i) => (
                         <View key={i} style={styles.listItem}>
                             <Text style={styles.bullet}>•</Text>
@@ -185,15 +234,15 @@ const PlantillaETA = ({ data }) => {
                     ))}
                 </View>
 
-                {/* 3. Fundamentación */}
+                {/* 2. Fundamentación */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionHeading}>3. Fundamentación de la Secuencia Didáctica</Text>
+                    <Text style={styles.sectionHeading}>2. Fundamentación de la Secuencia Didáctica</Text>
                     <Text style={styles.paragraph}>{data.fundamentacion}</Text>
                 </View>
 
                 {/* Estructura de la Secuencia Didáctica */}
-                <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: '#ccc', paddingTop: 10 }}>
-                    <Text style={styles.mainTitle}>Estructura de la Secuencia Didáctica</Text>
+                <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 10 }}>
+                    <Text style={[styles.mainTitle, { color: '#064e3b', fontSize: 10, marginBottom: 15 }]}>ESTRUCTURA DE LA SECUENCIA DIDÁCTICA</Text>
 
                     {/* A. Propósitos */}
                     <Text style={styles.sectionHeading}>A. Propósitos</Text>
@@ -205,7 +254,7 @@ const PlantillaETA = ({ data }) => {
                     ))}
 
                     {/* B. Saberes */}
-                    <Text style={styles.sectionHeading}>B. Eje - Saberes - Contenidos a desarrollar</Text>
+                    <Text style={styles.sectionHeading}>B. Saberes / Contenidos</Text>
                     {data.estructura.saberes.map((item, i) => (
                         <View key={i} style={styles.listItem}>
                             <Text style={styles.bullet}>•</Text>
@@ -221,104 +270,101 @@ const PlantillaETA = ({ data }) => {
                             <Text style={styles.listText}>{item}</Text>
                         </View>
                     ))}
+                </View>
 
-                    {/* D. Clases */}
-                    <Text style={styles.sectionHeading}>D. Clases - Actividades</Text>
-                    {data.clases.map((clase, i) => (
-                        <View key={i} style={{ marginBottom: 20 }}>
-                            <Text style={styles.subSectionHeading}>{clase.nombre}</Text>
+                {/* D. Plan de Clases */}
+                <View break style={styles.section}>
+                    <Text style={styles.sectionHeading}>D. Plan de Clases y Actividades</Text>
 
-                            <Text style={{ fontWeight: 'bold', fontSize: 9 }}>Actividades de inicio (15-20 minutos):</Text>
-                            <Text style={[styles.paragraph, { paddingLeft: 10, marginTop: 3 }]}>{clase.inicio}</Text>
+                    {data.clases.map((clase, idx) => (
+                        <View key={idx} style={styles.classCard} wrap={false}>
+                            <Text style={styles.classHeader}>{clase.nombre}</Text>
 
-                            <Text style={{ fontWeight: 'bold', fontSize: 9 }}>Actividades de desarrollo (40-60 minutos):</Text>
-                            <Text style={[styles.paragraph, { paddingLeft: 10, marginTop: 3 }]}>{clase.desarrollo}</Text>
+                            {['inicio', 'desarrollo', 'cierre'].map((sectionKey) => (
+                                <View key={sectionKey} style={styles.sectionBox}>
+                                    <Text style={styles.sectionLabel}>
+                                        {sectionKey === 'inicio' ? '📍 Apertura' : sectionKey === 'desarrollo' ? '📝 Desarrollo' : '🏁 Cierre'}
+                                    </Text>
 
-                            <Text style={{ fontWeight: 'bold', fontSize: 9 }}>Actividades de cierre (15-20 minutos):</Text>
-                            <Text style={[styles.paragraph, { paddingLeft: 10, marginTop: 3 }]}>{clase.cierre}</Text>
-
-                            <Text style={[styles.label, { fontSize: 9 }]}>Consignas metacognitivas:</Text>
-                            <Text style={[styles.paragraph, { paddingLeft: 10 }]}>{clase.metacognicion}</Text>
-
-                            <Text style={[styles.label, { fontSize: 9 }]}>Posibles errores e intervenciones:</Text>
-                            <Text style={[styles.paragraph, { paddingLeft: 10 }]}>{clase.errores_intervenciones}</Text>
-
-                            <Text style={[styles.label, { fontSize: 9 }]}>Diferenciación de actividades:</Text>
-                            <Text style={[styles.paragraph, { paddingLeft: 10 }]}>{clase.diferenciacion}</Text>
-
-                            {/* Multimedia Sections */}
-                            {(clase.imagen || clase.youtube_url || (clase.recursos_audiovisuales?.youtube && clase.recursos_audiovisuales.youtube.length > 0)) && (
-                                <View style={styles.mediaContainer}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
-                                        <Text style={{ fontSize: 8, fontWeight: 'bold' }}>RECURSOS SUGERIDOS:</Text>
-                                    </View>
-
-                                    {clase.youtube_url && (
-                                        <Text style={{ marginBottom: 4 }}>
-                                            <Text style={{ fontWeight: 'bold' }}>• Video:</Text> <Link src={clase.youtube_url} style={styles.youtubeLink}>{clase.youtube_url}</Link>
-                                        </Text>
+                                    {/* Image if position matches current section */}
+                                    {(clase.imagen || clase.imagen_url) && (clase.imagen_posicion === sectionKey || (!clase.imagen_posicion && sectionKey === 'desarrollo')) && (
+                                        <Image src={clase.imagen || clase.imagen_url} style={styles.classImage} />
                                     )}
 
-                                    {clase.recursos_audiovisuales?.youtube?.map((vid, vidIdx) => (
-                                        <Text key={vidIdx} style={{ marginBottom: 2 }}>
-                                            <Text style={{ fontWeight: 'bold' }}>• {vid.titulo}:</Text> <Link src={vid.url_sugerida} style={styles.youtubeLink}>Ver en YouTube</Link>
-                                        </Text>
-                                    ))}
+                                    <Text style={[styles.paragraph, { lineHeight: 1.6, fontSize: 9, color: '#334155' }]}>{clase[sectionKey]}</Text>
 
-                                    {clase.imagen && (
-                                        <Image src={clase.imagen} style={styles.classImage} />
+                                    {sectionKey === 'desarrollo' && (
+                                        <>
+                                            <View style={{ marginTop: 5, borderTopWidth: 0.5, borderTopColor: '#f1f5f9', paddingTop: 5 }}>
+                                                <Text style={[styles.label, { fontSize: 8, color: '#64748b' }]}>Diferenciación:</Text>
+                                                <Text style={[styles.paragraph, { paddingLeft: 10, fontSize: 8, color: '#64748b' }]}>{clase.diferenciacion}</Text>
+                                            </View>
+
+                                            {/* Videos strictly in development for flow */}
+                                            {(clase.youtube_url || (clase.recursos_audiovisuales?.youtube && clase.recursos_audiovisuales.youtube.length > 0)) && (
+                                                <View style={styles.mediaContainer}>
+                                                    <Text style={{ fontSize: 7, fontWeight: 'bold', color: '#059669', marginBottom: 4 }}>CONTENIDO AUDIOVISUAL:</Text>
+                                                    {clase.youtube_url && (
+                                                        <Text style={{ marginBottom: 2 }}>
+                                                            <Text style={{ fontWeight: 'bold' }}>• Link:</Text> <Link src={clase.youtube_url} style={styles.youtubeLink}>{clase.youtube_url}</Link>
+                                                        </Text>
+                                                    )}
+                                                    {clase.recursos_audiovisuales?.youtube?.map((vid, vidIdx) => (
+                                                        <Text key={vidIdx} style={{ marginBottom: 2 }}>
+                                                            <Text style={{ fontWeight: 'bold' }}>• {vid.titulo}:</Text> <Link src={vid.url_sugerida} style={styles.youtubeLink}>Ver Video</Link>
+                                                        </Text>
+                                                    ))}
+                                                </View>
+                                            )}
+                                        </>
                                     )}
                                 </View>
-                            )}
+                            ))}
                         </View>
                     ))}
                 </View>
 
-                {/* F. Evaluación */}
+                {/* E. Evaluación */}
                 <View break style={styles.section}>
-                    <Text style={styles.sectionHeading}>F. Evaluación</Text>
-                    <Text style={[styles.subSectionHeading, { marginBottom: 10 }]}>Criterios de Evaluación:</Text>
+                    <Text style={styles.sectionHeading}>E. Evaluación</Text>
 
+                    <Text style={[styles.subSectionHeading, { marginBottom: 10 }]}>Rúbrica de Desempeño:</Text>
                     <View style={styles.table}>
                         <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                            <View style={[styles.tableCol, { width: '20%' }]}><Text style={styles.tableCellHeader}>CRITERIOS</Text></View>
-                            <View style={[styles.tableCol, { width: '80%' }]}><Text style={styles.tableCellHeader}>NIVELES DE DESEMPEÑO</Text></View>
+                            <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCellHeader}>CRITERIOS</Text></View>
+                            <View style={[styles.tableCol, { width: '75%', borderRightWidth: 0 }]}><Text style={styles.tableCellHeader}>NIVELES DE DESEMPEÑO</Text></View>
                         </View>
                         <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                            <View style={[styles.tableCol, { width: '20%' }]}></View>
-                            <View style={[styles.tableCol, { width: '20%' }]}><Text style={styles.tableCellHeader}>INICIALES</Text></View>
-                            <View style={[styles.tableCol, { width: '20%' }]}><Text style={styles.tableCellHeader}>BÁSICOS</Text></View>
-                            <View style={[styles.tableCol, { width: '20%' }]}><Text style={styles.tableCellHeader}>SATISFACTORIOS</Text></View>
-                            <View style={[styles.tableCol, { width: '20%', borderRightWidth: 0 }]}><Text style={styles.tableCellHeader}>DESTACADOS</Text></View>
+                            <View style={[styles.tableCol, { width: '25%' }]}></View>
+                            <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>INICIAL</Text></View>
+                            <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>BÁSICO</Text></View>
+                            <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>SATISFACTORIO</Text></View>
+                            <View style={[styles.tableCol, { width: '18.75%', borderRightWidth: 0 }]}><Text style={styles.tableCellHeader}>DESTACADO</Text></View>
                         </View>
-                        {data.evaluacion.rubrica.map((row, i) => (
-                            <View key={i} style={[styles.tableRow, { borderBottomWidth: i === data.evaluacion.rubrica.length - 1 ? 0 : 1 }]}>
-                                <View style={[styles.tableCol, { width: '20%', backgroundColor: '#f9f9f9' }]}><Text style={[styles.tableCell, { fontWeight: 'bold' }]}>{row.criterio}</Text></View>
-                                <View style={[styles.tableCol, { width: '20%' }]}><Text style={styles.tableCell}>{row.inicial}</Text></View>
-                                <View style={[styles.tableCol, { width: '20%' }]}><Text style={styles.tableCell}>{row.basico}</Text></View>
-                                <View style={[styles.tableCol, { width: '20%' }]}><Text style={styles.tableCell}>{row.satisfactorio}</Text></View>
-                                <View style={[styles.tableCol, { width: '20%', borderRightWidth: 0 }]}><Text style={styles.tableCell}>{row.destacado}</Text></View>
+                        {(data.evaluacion.rubrica || []).map((row, i) => (
+                            <View key={i} style={[styles.tableRow, { borderBottomWidth: i === (data.evaluacion.rubrica?.length - 1) ? 0 : 1 }]}>
+                                <View style={[styles.tableCol, { width: '25%', backgroundColor: '#f8fafc' }]}><Text style={[styles.tableCell, { fontWeight: 'bold' }]}>{row.criterio}</Text></View>
+                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.inicial}</Text></View>
+                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.basico}</Text></View>
+                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.satisfactorio}</Text></View>
+                                <View style={[styles.tableCol, { width: '18.75%', borderRightWidth: 0 }]}><Text style={styles.tableCell}>{row.destacado}</Text></View>
                             </View>
                         ))}
                     </View>
 
-                    <Text style={[styles.subSectionHeading, { marginTop: 20 }]}>Instrumentos de Evaluación:</Text>
-                    {data.evaluacion.instrumentos.map((item, i) => (
-                        <View key={i} style={styles.listItem}>
-                            <Text style={styles.bullet}>{i + 1}.</Text>
-                            <Text style={styles.listText}>{item}</Text>
-                        </View>
-                    ))}
+                    <View style={{ marginTop: 15 }}>
+                        <Text style={[styles.label, { fontSize: 9, marginBottom: 5 }]}>Instrumentos de Evaluación:</Text>
+                        {(data.evaluacion.instrumentos || []).map((ins, i) => (
+                            <Text key={i} style={[styles.paragraph, { marginBottom: 2, fontSize: 8 }]}>• {ins}</Text>
+                        ))}
+                    </View>
                 </View>
 
-                {/* G. Bibliografía */}
+                {/* F. Bibliografía */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionHeading}>G. Bibliografía</Text>
-                    {data.bibliografia.map((item, i) => (
-                        <View key={i} style={styles.listItem}>
-                            <Text style={styles.bullet}>•</Text>
-                            <Text style={styles.listText}>{item}</Text>
-                        </View>
+                    <Text style={styles.sectionHeading}>F. Bibliografía (Normas APA 7ma Ed.)</Text>
+                    {(data.bibliografia || []).map((b, i) => (
+                        <Text key={i} style={[styles.paragraph, { marginBottom: 4, fontSize: 8, fontStyle: 'italic' }]}>• {b}</Text>
                     ))}
                 </View>
 

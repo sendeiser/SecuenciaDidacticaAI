@@ -63,25 +63,33 @@ export const generatePlanning = async (formData) => {
         }
       ],
       "evaluacion": {
+        "criterios": ["Resumen breve de criterios..."],
         "rubrica": [
           { "criterio": "Criterio 1", "inicial": "...", "basico": "...", "satisfactorio": "...", "destacado": "..." }
         ],
-        "instrumentos": ["lista de 4 instrumentos de evaluación"]
+        "instrumentos": ["Instrumento 1...", "Instrumento 2..."]
       },
-      "bibliografia": ["Lista de 3-4 referencias bibliográficas actuales"]
+      "bibliografia": ["Cita en formato APA 7ma Edición (Apellido, N., Año, Título, etc.)..."]
     }
 
     Recomendaciones Críticas de Calidad:
-    1. CANTIDAD DE CLASES: DEBES generar exactamente ${formData.numClases} clases en el array "clases". 
-    2. PROFUNDIDAD DE PRÁCTICA: En cada clase DEBES incluir exactamente ${formData.cantActividades} actividades o bloques de ejercicios diferenciados.
+    1. FORMATO DE LISTAS: En el campo "desarrollo", usa una numeración clara (1., 2., 3.) con un salto de línea doble entre cada actividad para maximizar la legibilidad.
+    2. CANTIDAD DE CLASES: DEBES generar exactamente ${formData.numClases} clases en el array "clases". 
+    3. PROFUNDIDAD DE PRÁCTICA: En cada clase DEBES incluir exactamente ${formData.cantActividades} actividades o bloques de ejercicios diferenciados.
     3. VARIEDAD: El nivel de variedad debe ser ${formData.variedadActividades}. Esto significa que los ejercicios no deben ser repetitivos; integra análisis de casos, resolución de problemas, debates, y ejercicios técnicos.
     4. METODOLOGÍA: Todas las actividades deben tener un enfoque predominantemente ${formData.tipoActividades}.
-    3. DESARROLLO Y EJERCICIOS: No uses generalidades como "El docente dará ejercicios". DEBES redactar los ejercicios, problemas o consignas textuales para que el alumno los resuelva. Si es Matemática, pon el problema; si es Lengua, pon el texto y las preguntas. Las actividades deben estar "listas para usar".
+    3. DESARROLLO Y EJERCICIOS (CRÍTICO): ESTÁ ESTRICTAMENTE PROHIBIDO usar generalidades como "El docente dará ejercicios" o "Se realizarán problemas de...". 
+       - DEBES redactar los ejercicios LINGÜÍSTICAMENTE Y MATEMÁTICAMENTE COMPLETOS.
+       - Si es Matemática: "Resuelve: a) 3x+5=20...". 
+       - Si es Lengua: "Lee el siguiente fragmento de [Autor] y responde: 1...". 
+       - Si es Técnica: "Dibuja un circuito con...".
+       - Las actividades deben estar "listas para fotocopiar y entregar".
     4. ESPECIFICIDAD: Usa términos técnicos, leyes y bibliografía coherente con el eje temático.
     3. MEDIA INTEGRADO (SI ESTÁ ACTIVADO): 
        - Si se solicitan videos, inserta en el JSON recomendaciones específicas.
        - Si se solicitan imágenes, describe brevemente qué imagen o esquema debería ir en cada parte (ej: "Esquema del ciclo del agua").
-    4. TONO PROFESIONAL: El lenguaje debe ser académico, técnico y pedagógicamente sólido, digno de una institución técnica.
+    4. BIBLIOGRAFÍA Y CITAS APA: Toda la bibliografía DEBE seguir estrictamente las Normas APA 7ma Edición. Además, DEBES incluir citas cortas dentro del texto (ej: Apellido, Año) en la fundamentación y en el desarrollo de las clases cuando se mencionen estrategias o teorías pedagógicas.
+    5. TONO PROFESIONAL: El lenguaje debe ser académico, técnico y pedagógicamente sólido, digno de una institución técnica.
     
     RESPONDE SOLO EL JSON PURO. No incluyas explicaciones ni bloques de código markdown.
   `;

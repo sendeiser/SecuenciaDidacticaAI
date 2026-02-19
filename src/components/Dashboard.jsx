@@ -289,17 +289,45 @@ const Dashboard = () => {
                                             />
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Desarrollo de Actividades</label>
-                                            <textarea
-                                                className="w-full h-48 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
-                                                value={clase.desarrollo}
-                                                onChange={(e) => {
-                                                    const newClases = [...planningData.clases];
-                                                    newClases[idx].desarrollo = e.target.value;
-                                                    handleUpdatePlanning('clases', newClases);
-                                                }}
-                                            />
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Inicio / Apertura</label>
+                                                <textarea
+                                                    className="w-full h-24 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
+                                                    value={clase.inicio}
+                                                    onChange={(e) => {
+                                                        const newClases = [...planningData.clases];
+                                                        newClases[idx].inicio = e.target.value;
+                                                        handleUpdatePlanning('clases', newClases);
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Desarrollo de Actividades</label>
+                                                <textarea
+                                                    className="w-full h-48 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
+                                                    value={clase.desarrollo}
+                                                    onChange={(e) => {
+                                                        const newClases = [...planningData.clases];
+                                                        newClases[idx].desarrollo = e.target.value;
+                                                        handleUpdatePlanning('clases', newClases);
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Cierre / Síntesis</label>
+                                                <textarea
+                                                    className="w-full h-24 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
+                                                    value={clase.cierre}
+                                                    onChange={(e) => {
+                                                        const newClases = [...planningData.clases];
+                                                        newClases[idx].cierre = e.target.value;
+                                                        handleUpdatePlanning('clases', newClases);
+                                                    }}
+                                                />
+                                            </div>
                                         </div>
 
                                         {/* Multimedia Section */}
@@ -327,7 +355,24 @@ const Dashboard = () => {
 
                                             {/* Image Upload Simulation */}
                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-bold text-slate-400 uppercase block">Imagen Ilustrativa</label>
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[9px] font-bold text-slate-400 uppercase block">Imagen Ilustrativa</label>
+                                                    {clase.imagen && (
+                                                        <select
+                                                            className="text-[9px] font-bold text-forest-700 bg-forest-50 border border-forest-200 rounded px-2 py-0.5 outline-none"
+                                                            value={clase.imagen_posicion || 'desarrollo'}
+                                                            onChange={(e) => {
+                                                                const newClases = [...planningData.clases];
+                                                                newClases[idx].imagen_posicion = e.target.value;
+                                                                handleUpdatePlanning('clases', newClases);
+                                                            }}
+                                                        >
+                                                            <option value="inicio">En Inicio</option>
+                                                            <option value="desarrollo">En Desarrollo</option>
+                                                            <option value="cierre">En Cierre</option>
+                                                        </select>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-3">
                                                     {clase.imagen ? (
                                                         <div className="relative group">
@@ -365,8 +410,18 @@ const Dashboard = () => {
                                                             />
                                                         </label>
                                                     )}
-                                                    <div className="flex-1">
-                                                        <p className="text-[9px] text-slate-400 leading-tight">Sube una imagen o esquema para esta clase. Se incluirá en el PDF final.</p>
+                                                    <div className="flex-1 space-y-2">
+                                                        <input
+                                                            placeholder="O pega una URL de imagen aquí..."
+                                                            className="w-full p-2 text-[10px] border border-slate-200 rounded-lg"
+                                                            value={clase.imagen_url || ''}
+                                                            onChange={(e) => {
+                                                                const newClases = [...planningData.clases];
+                                                                newClases[idx].imagen_url = e.target.value;
+                                                                handleUpdatePlanning('clases', newClases);
+                                                            }}
+                                                        />
+                                                        <p className="text-[9px] text-slate-400 leading-tight">Sube una imagen o pega un enlace directo. Se incluirá en el PDF final.</p>
                                                     </div>
                                                 </div>
                                             </div>
