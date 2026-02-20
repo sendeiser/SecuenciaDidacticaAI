@@ -140,31 +140,23 @@ export const exportToWord = async (data) => {
                     new Paragraph({ text: "D. Plan de Clases y Actividades", heading: HeadingLevel.HEADING_2, spacing: { before: 400, after: 200 } }),
 
                     ...data.clases.flatMap((clase) => [
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            rows: [
-                                new TableRow({
-                                    children: [
-                                        new TableCell({
-                                            children: [new Paragraph({ text: clase.nombre, bold: true, spacing: { before: 100, after: 100 } })],
-                                            shading: { fill: "F0FDF4" },
-                                            borders: { left: { style: BorderStyle.SINGLE, size: 20, color: "10B981" } }
-                                        })
-                                    ]
-                                })
-                            ]
+                        new Paragraph({
+                            text: clase.nombre.toUpperCase(),
+                            heading: HeadingLevel.HEADING_3,
+                            spacing: { before: 300, after: 150 },
+                            border: { bottom: { color: "E2E8F0", space: 1, style: BorderStyle.SINGLE, size: 6 } }
                         }),
                         new Paragraph({ text: "📍 Apertura", bold: true, spacing: { before: 150 } }),
-                        new Paragraph({ text: clase.inicio, indent: { left: 200 }, alignment: AlignmentType.LEFT }),
+                        new Paragraph({ text: clase.inicio, indent: { left: 240 }, alignment: AlignmentType.LEFT }),
 
                         new Paragraph({ text: "📝 Desarrollo", bold: true, spacing: { before: 150 } }),
-                        new Paragraph({ text: clase.desarrollo, indent: { left: 200 }, alignment: AlignmentType.LEFT }),
+                        new Paragraph({ text: clase.desarrollo, indent: { left: 240 }, alignment: AlignmentType.LEFT }),
 
                         new Paragraph({ text: "🏁 Cierre", bold: true, spacing: { before: 150 } }),
-                        new Paragraph({ text: clase.cierre, indent: { left: 200 }, alignment: AlignmentType.LEFT }),
+                        new Paragraph({ text: clase.cierre, indent: { left: 240 }, alignment: AlignmentType.LEFT }),
 
                         new Paragraph({ text: "Diferenciación:", italics: true, spacing: { before: 100 } }),
-                        new Paragraph({ text: clase.diferenciacion, indent: { left: 200 }, size: 18, color: "64748B" }),
+                        new Paragraph({ text: clase.diferenciacion, indent: { left: 240 }, size: 18, color: "64748B" }),
                         new Paragraph({ text: "", spacing: { after: 300 } }),
                     ]),
 
