@@ -273,11 +273,11 @@ const PlantillaETA = ({ data }) => {
                 </View>
 
                 {/* D. Plan de Clases */}
-                <View break style={styles.section}>
+                <View style={styles.section}>
                     <Text style={styles.sectionHeading}>D. Plan de Clases y Actividades</Text>
 
                     {data.clases.map((clase, idx) => (
-                        <View key={idx} style={styles.classCard} wrap={false}>
+                        <View key={idx} style={styles.classCard}>
                             <Text style={styles.classHeader}>{clase.nombre}</Text>
 
                             {['inicio', 'desarrollo', 'cierre'].map((sectionKey) => (
@@ -325,7 +325,7 @@ const PlantillaETA = ({ data }) => {
                 </View>
 
                 {/* E. Evaluación */}
-                <View break style={styles.section}>
+                <View style={styles.section}>
                     <Text style={styles.sectionHeading}>E. Evaluación</Text>
 
                     <Text style={[styles.subSectionHeading, { marginBottom: 10 }]}>Rúbrica de Desempeño:</Text>

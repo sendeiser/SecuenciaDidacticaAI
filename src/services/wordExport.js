@@ -1,18 +1,51 @@
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType, ShadingType } from "docx";
+import {
+    Document,
+    Packer,
+    Paragraph,
+    TextRun,
+    HeadingLevel,
+    Table,
+    TableRow,
+    TableCell,
+    WidthType,
+    BorderStyle,
+    AlignmentType,
+    ShadingType,
+    VerticalAlign,
+    Margins,
+    PageOrientation
+} from "docx";
 import { saveAs } from "file-saver";
 
 export const exportToWord = async (data) => {
+    if (!data) return;
+
     const doc = new Document({
         sections: [
             {
-                properties: {},
+                properties: {
+                    page: {
+                        margin: {
+                            top: 1440, // 1 inch
+                            right: 1440,
+                            bottom: 1440,
+                            left: 1440,
+                        },
+                    },
+                },
                 children: [
-                    // Header
+                    // --- HEADER ---
                     new Paragraph({
-                        text: `Secuencia Didáctica de ${data.encabezado.materia}`,
+                        text: "Secuencia Didáctica Institucional",
                         heading: HeadingLevel.HEADING_1,
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 200 },
+                        spacing: { after: 120 },
+                    }),
+                    new Paragraph({
+                        text: data.encabezado.materia,
+                        alignment: AlignmentType.CENTER,
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { after: 300 },
                     }),
 
                     new Paragraph({
@@ -22,133 +55,183 @@ export const exportToWord = async (data) => {
                             new TextRun({ text: "    Zona: ", bold: true }),
                             new TextRun(data.encabezado.zona),
                         ],
-                    }),
-                    new Paragraph({ text: "Datos personales del docente:", bold: true, spacing: { before: 100 } }),
-                    ...[
-                        ["Nombre y apellido", data.encabezado.docente],
-                        ["DNI", data.encabezado.dni],
-                        ["Correo electrónico", data.encabezado.email],
-                        ["Teléfono", data.encabezado.telefono],
-                    ].map(([label, value]) => new Paragraph({
-                        children: [
-                            new TextRun({ text: "• ", bold: true }),
-                            new TextRun({ text: `${label}: `, bold: true }),
-                            new TextRun(value),
-                        ],
-                        indent: { left: 720 },
-                    })),
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: "Ciclo: ", bold: true }),
-                            new TextRun(data.encabezado.ciclo),
-                            new TextRun({ text: "    Año: ", bold: true }),
-                            new TextRun(data.encabezado.año),
-                            new TextRun({ text: "    Año Lectivo: ", bold: true }),
-                            new TextRun(data.encabezado.anio_lectivo),
-                        ],
-                        spacing: { before: 100 },
-                    }),
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: "Eje Temático / Contenidos: ", bold: true }),
-                            new TextRun(data.encabezado.eje_tematico),
-                        ],
-                    }),
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: "Nombre de la Secuencia Didáctica: ", bold: true }),
-                            new TextRun(`"${data.encabezado.titulo_secuencia}"`),
-                        ],
+                        spacing: { after: 120 },
                     }),
 
-                    // 2. Puntos de partida
-                    new Paragraph({ text: "2. Puntos de partida", heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }),
-                    ...data.puntos_partida.map(punto => new Paragraph({
-                        children: [new TextRun("• "), new TextRun(punto)],
-                        indent: { left: 720 },
-                    })),
-
-                    // 3. Fundamentación
-                    new Paragraph({ text: "3. Fundamentación de la Secuencia Didáctica", heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }),
-                    new Paragraph({ text: data.fundamentacion, alignment: AlignmentType.JUSTIFY }),
-
-                    // Estructura
-                    new Paragraph({ text: "Estructura de la Secuencia Didáctica", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
-
-                    new Paragraph({ text: "A. Propósitos", heading: HeadingLevel.HEADING_2 }),
-                    ...data.estructura.propositos.map(item => new Paragraph({
-                        children: [new TextRun("• "), new TextRun(item)],
-                        indent: { left: 720 },
-                    })),
-
-                    new Paragraph({ text: "B. Eje - Saberes - Contenidos a desarrollar", heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }),
-                    ...data.estructura.saberes.map(item => new Paragraph({
-                        children: [new TextRun("• "), new TextRun(item)],
-                        indent: { left: 720 },
-                    })),
-
-                    new Paragraph({ text: "C. Objetivos", heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }),
-                    ...data.estructura.objetivos.map(item => new Paragraph({
-                        children: [new TextRun("• "), new TextRun(item)],
-                        indent: { left: 720 },
-                    })),
-
-                    // D. Clases
-                    new Paragraph({ text: "D. Clases - Actividades", heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }),
-                    ...data.clases.flatMap((clase, i) => [
-                        new Paragraph({ text: clase.nombre, heading: HeadingLevel.HEADING_3, spacing: { before: 150 } }),
-                        new Paragraph({ text: "Actividades de inicio (15-20 minutos):", bold: true }),
-                        new Paragraph({ text: clase.inicio, indent: { left: 360 }, spacing: { after: 100 } }),
-                        new Paragraph({ text: "Actividades de desarrollo (40-60 minutos):", bold: true }),
-                        new Paragraph({ text: clase.desarrollo, indent: { left: 360 }, spacing: { after: 100 } }),
-                        new Paragraph({ text: "Actividades de cierre (15-20 minutos):", bold: true }),
-                        new Paragraph({ text: clase.cierre, indent: { left: 360 }, spacing: { after: 100 } }),
-                        new Paragraph({ text: "Consignas metacognitivas:", bold: true }),
-                        new Paragraph({ text: clase.metacognicion, indent: { left: 360 }, spacing: { after: 100 } }),
-                        new Paragraph({ text: "Posibles errores e intervenciones:", bold: true }),
-                        new Paragraph({ text: clase.errores_intervenciones, indent: { left: 360 }, spacing: { after: 100 } }),
-                        new Paragraph({ text: "Diferenciación de actividades:", bold: true }),
-                        new Paragraph({ text: clase.diferenciacion, indent: { left: 360 }, spacing: { after: 100 } }),
-                    ]),
-
-                    // F. Evaluación
-                    new Paragraph({ text: "F. Evaluación", heading: HeadingLevel.HEADING_2, spacing: { before: 400 } }),
-                    new Paragraph({ text: "Criterios de Evaluación:", bold: true }),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
                         rows: [
                             new TableRow({
                                 children: [
-                                    new TableCell({ children: [new Paragraph({ text: "CRITERIOS", bold: true })], shading: { fill: "f2f2f2", type: ShadingType.CLEAR } }),
-                                    new TableCell({ children: [new Paragraph({ text: "INICIAL", bold: true })], shading: { fill: "f2f2f2", type: ShadingType.CLEAR } }),
-                                    new TableCell({ children: [new Paragraph({ text: "BÁSICO", bold: true })], shading: { fill: "f2f2f2", type: ShadingType.CLEAR } }),
-                                    new TableCell({ children: [new Paragraph({ text: "SATISFACTORIO", bold: true })], shading: { fill: "f2f2f2", type: ShadingType.CLEAR } }),
-                                    new TableCell({ children: [new Paragraph({ text: "DESTACADO", bold: true })], shading: { fill: "f2f2f2", type: ShadingType.CLEAR } }),
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: "DOCENTE:", bold: true }), new TextRun(` ${data.encabezado.docente}`)] })],
+                                        borders: { bottom: { style: BorderStyle.SINGLE, size: 1 } }
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: "DNI:", bold: true }), new TextRun(` ${data.encabezado.dni}`)] })],
+                                        borders: { bottom: { style: BorderStyle.SINGLE, size: 1 } }
+                                    }),
+                                ]
+                            }),
+                        ]
+                    }),
+
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Ciclo: ", bold: true }), new TextRun(data.encabezado.ciclo),
+                            new TextRun({ text: "   Año: ", bold: true }), new TextRun(data.encabezado.año),
+                            new TextRun({ text: "   Año Lectivo: ", bold: true }), new TextRun(data.encabezado.anio_lectivo),
+                        ],
+                        spacing: { before: 200, after: 120 },
+                    }),
+
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Eje Temático: ", bold: true }),
+                            new TextRun(data.encabezado.eje_tematico),
+                        ],
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Secuencia: ", bold: true }),
+                            new TextRun(`"${data.encabezado.titulo_secuencia}"`),
+                        ],
+                        spacing: { after: 400 },
+                    }),
+
+                    // --- 1. PUNTOS DE PARTIDA ---
+                    new Paragraph({ text: "1. Puntos de partida", heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 120 } }),
+                    ...data.puntos_partida.map(punto => new Paragraph({
+                        children: [new TextRun("• "), new TextRun(punto)],
+                        indent: { left: 360 },
+                    })),
+
+                    // --- 2. FUNDAMENTACIÓN ---
+                    new Paragraph({ text: "2. Fundamentación de la Secuencia Didáctica", heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 120 } }),
+                    new Paragraph({ text: data.fundamentacion, alignment: AlignmentType.LEFT, spacing: { after: 300 } }),
+
+                    // --- ESTRUCTURA ---
+                    new Paragraph({
+                        text: "ESTRUCTURA DE LA SECUENCIA DIDÁCTICA",
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: AlignmentType.LEFT,
+                        spacing: { before: 400, after: 200 }
+                    }),
+
+                    new Paragraph({ text: "A. Propósitos", heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }),
+                    ...data.estructura.propositos.map(item => new Paragraph({
+                        children: [new TextRun("• "), new TextRun(item)],
+                        indent: { left: 360 },
+                    })),
+
+                    new Paragraph({ text: "B. Saberes / Contenidos", heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }),
+                    ...data.estructura.saberes.map(item => new Paragraph({
+                        children: [new TextRun("• "), new TextRun(item)],
+                        indent: { left: 360 },
+                    })),
+
+                    new Paragraph({ text: "C. Objetivos", heading: HeadingLevel.HEADING_2, spacing: { before: 200 } }),
+                    ...data.estructura.objetivos.map(item => new Paragraph({
+                        children: [new TextRun("• "), new TextRun(item)],
+                        indent: { left: 360 },
+                    })),
+
+                    // --- D. PLAN DE CLASES ---
+                    new Paragraph({ text: "D. Plan de Clases y Actividades", heading: HeadingLevel.HEADING_2, spacing: { before: 400, after: 200 } }),
+
+                    ...data.clases.flatMap((clase) => [
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            children: [new Paragraph({ text: clase.nombre, bold: true, spacing: { before: 100, after: 100 } })],
+                                            shading: { fill: "F0FDF4" },
+                                            borders: { left: { style: BorderStyle.SINGLE, size: 20, color: "10B981" } }
+                                        })
+                                    ]
+                                })
+                            ]
+                        }),
+                        new Paragraph({ text: "📍 Apertura", bold: true, spacing: { before: 150 } }),
+                        new Paragraph({ text: clase.inicio, indent: { left: 200 }, alignment: AlignmentType.LEFT }),
+
+                        new Paragraph({ text: "📝 Desarrollo", bold: true, spacing: { before: 150 } }),
+                        new Paragraph({ text: clase.desarrollo, indent: { left: 200 }, alignment: AlignmentType.LEFT }),
+
+                        new Paragraph({ text: "🏁 Cierre", bold: true, spacing: { before: 150 } }),
+                        new Paragraph({ text: clase.cierre, indent: { left: 200 }, alignment: AlignmentType.LEFT }),
+
+                        new Paragraph({ text: "Diferenciación:", italics: true, spacing: { before: 100 } }),
+                        new Paragraph({ text: clase.diferenciacion, indent: { left: 200 }, size: 18, color: "64748B" }),
+                        new Paragraph({ text: "", spacing: { after: 300 } }),
+                    ]),
+
+                    // --- E. EVALUACIÓN ---
+                    new Paragraph({ text: "E. Evaluación", heading: HeadingLevel.HEADING_2, spacing: { before: 400, after: 200 } }),
+                    new Paragraph({ text: "Rúbrica de Desempeño:", bold: true, spacing: { after: 120 } }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        children: [new Paragraph({ text: "CRITERIOS", bold: true, alignment: AlignmentType.CENTER })],
+                                        shading: { fill: "E6F3E6" },
+                                        verticalAlign: VerticalAlign.CENTER
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ text: "INICIAL", bold: true, alignment: AlignmentType.CENTER })],
+                                        shading: { fill: "E6F3E6" }
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ text: "BÁSICO", bold: true, alignment: AlignmentType.CENTER })],
+                                        shading: { fill: "E6F3E6" }
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ text: "SATISFACTORIO", bold: true, alignment: AlignmentType.CENTER })],
+                                        shading: { fill: "E6F3E6" }
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ text: "DESTACADO", bold: true, alignment: AlignmentType.CENTER })],
+                                        shading: { fill: "E6F3E6" }
+                                    }),
                                 ],
                             }),
                             ...data.evaluacion.rubrica.map(row => new TableRow({
                                 children: [
                                     new TableCell({ children: [new Paragraph({ text: row.criterio, bold: true })] }),
-                                    new TableCell({ children: [new Paragraph(row.inicial)] }),
-                                    new TableCell({ children: [new Paragraph(row.basico)] }),
-                                    new TableCell({ children: [new Paragraph(row.satisfactorio)] }),
-                                    new TableCell({ children: [new Paragraph(row.destacado)] }),
+                                    new TableCell({ children: [new Paragraph(row.inicial || "")] }),
+                                    new TableCell({ children: [new Paragraph(row.basico || "")] }),
+                                    new TableCell({ children: [new Paragraph(row.satisfactorio || "")] }),
+                                    new TableCell({ children: [new Paragraph(row.destacado || "")] }),
                                 ],
                             })),
                         ],
                     }),
-                    new Paragraph({ text: "Instrumentos de Evaluación:", bold: true, spacing: { before: 200 } }),
-                    ...data.evaluacion.instrumentos.map((item, i) => new Paragraph({
-                        children: [new TextRun(`${i + 1}. `), new TextRun(item)],
-                        indent: { left: 720 },
+
+                    new Paragraph({ text: "Instrumentos de Evaluación:", bold: true, spacing: { before: 240, after: 120 } }),
+                    ...data.evaluacion.instrumentos.map((item) => new Paragraph({
+                        children: [new TextRun("• "), new TextRun(item)],
+                        indent: { left: 360 },
                     })),
 
-                    // G. Bibliografía
-                    new Paragraph({ text: "G. Bibliografía", heading: HeadingLevel.HEADING_2, spacing: { before: 400 } }),
+                    // --- F. BIBLIOGRAFÍA ---
+                    new Paragraph({ text: "F. Bibliografía (Normas APA 7ma Ed.)", heading: HeadingLevel.HEADING_2, spacing: { before: 400, after: 120 } }),
                     ...data.bibliografia.map(item => new Paragraph({
-                        children: [new TextRun("• "), new TextRun(item)],
-                        indent: { left: 720 },
+                        children: [new TextRun("• "), new TextRun({ text: item, italics: true })],
+                        indent: { left: 360 },
+                        spacing: { after: 120 }
                     })),
+
+                    new Paragraph({
+                        text: "Documento generado por Maestro de Planificaciones | Basado en el Trayecto de Actualización Matemática",
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 600 },
+                        size: 14,
+                        color: "94A3B8"
+                    })
                 ],
             },
         ],
