@@ -31,8 +31,9 @@ import {
     ExternalLink
 } from 'lucide-react';
 import PlantillaETA from './PlantillaETA';
-import { generatePlanning } from '../services/gemini';
+import { generatePlanning, analyzeDocumentStructure } from '../services/gemini';
 import { exportToWord } from '../services/wordExport';
+import { parseDocument } from '../services/documentParser';
 
 const Dashboard = () => {
     const [formData, setFormData] = useState({
@@ -62,6 +63,10 @@ const Dashboard = () => {
     const [error, setError] = useState(null);
     const [editingSection, setEditingSection] = useState(null);
 
+    // New states for Custom Templates
+    const [customTemplate, setCustomTemplate] = useState(null);
+    const [analyzingDoc, setAnalyzingDoc] = useState(false);
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -77,14 +82,45 @@ const Dashboard = () => {
         setPlanningData(newData);
     };
 
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setAnalyzingDoc(true);
+        setError(null);
+        try {
+            const text = await parseDocument(file);
+            const structure = await analyzeDocumentStructure(text);
+
+            // Initialize dynamic fields
+            const templateFields = {};
+            structure.datos_encabezado.forEach(field => {
+                templateFields[field] = '';
+            });
+
+            setCustomTemplate({
+                ...structure,
+                fileName: file.name,
+                rawText: text,
+                fields: templateFields
+            });
+            setError(`¡Plantilla "${structure.nombre_plantilla}" detectada con éxito!`);
+        } catch (err) {
+            console.error(err);
+            setError('No se pudo analizar el documento. Intenta con otro archivo.');
+        } finally {
+            setAnalyzingDoc(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
         try {
-            const data = await generatePlanning(formData);
+            const data = await generatePlanning({ ...formData, template: customTemplate });
             setPlanningData(data);
-            setActiveTab('editor'); // Automatically switch to editor after generation
+            setActiveTab('editor');
         } catch (err) {
             setError('Error al generar la secuencia. Verifica tu conexión y cuota de Groq.');
             console.error(err);
@@ -109,7 +145,6 @@ const Dashboard = () => {
                         <h1 className="text-lg font-bold text-white tracking-tight">Maestro de Secuencias</h1>
                     </div>
 
-                    {/* Tab Switcher */}
                     <div className="flex mt-6 bg-forest-950/40 p-1 rounded-xl relative z-10 ring-1 ring-white/5">
                         <button
                             onClick={() => setActiveTab('generator')}
@@ -132,385 +167,220 @@ const Dashboard = () => {
                 {/* Dynamic Column */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth scrollbar-thin scrollbar-thumb-slate-200">
                     {activeTab === 'generator' ? (
-                        <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField label="Institución" name="escuela" icon={<School className="w-3.5 h-3.5" />} value={formData.escuela} onChange={handleChange} placeholder="Ej. Colegio Nacional" />
-                                <FormField label="Zona" name="zona" icon={<MapPin className="w-3.5 h-3.5" />} value={formData.zona} onChange={handleChange} placeholder="Ej. Zona V" />
-                            </div>
-                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
-                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Datos del Docente</h3>
-                                <FormField label="Nombre y Apellido" name="docente" icon={<User className="w-3.5 h-3.5" />} value={formData.docente} onChange={handleChange} placeholder="Nombre completo" />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField label="DNI" name="dni" icon={<IdCard className="w-3.5 h-3.5" />} value={formData.dni} onChange={handleChange} placeholder="8.888.888" />
-                                    <FormField label="Teléfono" name="telefono" icon={<Phone className="w-3.5 h-3.5" />} value={formData.telefono} onChange={handleChange} placeholder="3826..." />
+                        <div className="space-y-6 animate-fade-in">
+                            {/* Template System */}
+                            <div className="p-5 bg-gradient-to-br from-forest-50 to-white rounded-3xl border border-forest-100 shadow-sm space-y-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Sparkles className="text-forest-600 w-4 h-4" />
+                                    <h3 className="text-[10px] font-black text-forest-900 uppercase tracking-widest">Sistema de Plantillas</h3>
                                 </div>
-                                <FormField label="Email" name="email" icon={<Mail className="w-3.5 h-3.5" />} value={formData.email} onChange={handleChange} placeholder="correo@ejemplo.com" />
-                            </div>
-
-                            <div className="space-y-4">
-                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detalles Académicos</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField label="Ciclo" name="ciclo" icon={<GraduationCap className="w-3.5 h-3.5" />} value={formData.ciclo} onChange={handleChange} placeholder="Ej. Ciclo Básico" />
-                                    <FormField label="Año" name="año" icon={<GraduationCap className="w-3.5 h-3.5" />} value={formData.año} onChange={handleChange} placeholder="Ej. 1er Año" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField label="Materia" name="materia" icon={<ClipboardList className="w-3.5 h-3.5" />} value={formData.materia} onChange={handleChange} placeholder="Ej. Física" />
-                                    <FormField label="Año Lectivo" name="anioLectivo" icon={<Sparkles className="w-3.5 h-3.5" />} value={formData.anioLectivo} onChange={handleChange} placeholder="Ej. 2024" />
-                                </div>
-                                <FormField label="Eje Temático / Contenidos" name="tematica" icon={<BookOpen className="w-3.5 h-3.5" />} value={formData.tematica} onChange={handleChange} placeholder="Ej. Leyes de Newton, Energía..." />
-                                <FormField label="Título" name="titulo" icon={<Sparkles className="w-3.5 h-3.5" />} value={formData.titulo} onChange={handleChange} placeholder="Título de la secuencia" />
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">N° de Clases</label>
-                                        <select
-                                            name="numClases"
-                                            value={formData.numClases}
-                                            onChange={handleChange}
-                                            className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm text-xs focus:ring-2 focus:ring-forest-500/10 focus:border-forest-600 outline-none transition-all"
-                                        >
-                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n}>{n} {n === 1 ? 'Clase' : 'Clases'}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Metodología</label>
-                                        <select
-                                            name="tipoActividades"
-                                            value={formData.tipoActividades}
-                                            onChange={handleChange}
-                                            className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm text-xs focus:ring-2 focus:ring-forest-500/10 focus:border-forest-600 outline-none transition-all"
-                                        >
-                                            {['Mixtas', 'Teóricas', 'Prácticas', 'Laboratorio', 'Salida de Campo', 'Evaluación'].map(t => <option key={t} value={t}>{t}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 mt-2">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actividades por Clase</label>
-                                        <select
-                                            name="cantActividades"
-                                            value={formData.cantActividades}
-                                            onChange={handleChange}
-                                            className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm text-xs focus:ring-2 focus:ring-forest-500/10 focus:border-forest-600 outline-none transition-all"
-                                        >
-                                            {['2', '3', '4', '5', '6'].map(n => <option key={n} value={n}>{n} Actividades</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Variedad Práctica</label>
-                                        <select
-                                            name="variedadActividades"
-                                            value={formData.variedadActividades}
-                                            onChange={handleChange}
-                                            className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm text-xs focus:ring-2 focus:ring-forest-500/10 focus:border-forest-600 outline-none transition-all"
-                                        >
-                                            {['Baja', 'Media', 'Alta', 'Extrema'].map(v => <option key={v} value={v}>{v}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex gap-6">
-                                <label className="flex items-center gap-2 cursor-pointer group">
-                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${formData.incluirVideos ? 'bg-forest-600 border-forest-600' : 'bg-white border-slate-300'}`}>
-                                        {formData.incluirVideos && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                                    </div>
-                                    <input type="checkbox" className="hidden" checked={formData.incluirVideos} onChange={() => setFormData({ ...formData, incluirVideos: !formData.incluirVideos })} />
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Incluir Videos</span>
+                                <p className="text-[10px] text-slate-500 leading-relaxed">Sube un documento base para que la IA aprenda su estructura.</p>
+                                <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${analyzingDoc ? 'bg-slate-50 border-slate-200' : 'bg-white border-forest-200 hover:border-forest-500 hover:bg-forest-50/30'}`}>
+                                    {analyzingDoc ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Loader2 className="w-6 h-6 text-forest-600 animate-spin" />
+                                            <span className="text-[10px] font-bold text-forest-700 animate-pulse">ANALIZANDO...</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2 text-forest-600">
+                                            <Plus className="w-5 h-5" />
+                                            <span className="text-[10px] font-bold uppercase">Subir Documento Base</span>
+                                        </div>
+                                    )}
+                                    <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleFileUpload} disabled={analyzingDoc} />
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer group">
-                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${formData.incluirImagenes ? 'bg-forest-600 border-forest-600' : 'bg-white border-slate-300'}`}>
-                                        {formData.incluirImagenes && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                {customTemplate && (
+                                    <div className="p-4 bg-white rounded-2xl border border-forest-100 shadow-sm animate-slide-up">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[11px] font-bold text-slate-700 truncate max-w-[150px]">{customTemplate.fileName}</span>
+                                            <button onClick={() => setCustomTemplate(null)}><X size={14} className="text-slate-400 hover:text-red-500" /></button>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <span className="text-[8px] font-black text-forest-500 uppercase px-2 py-0.5 bg-forest-50 rounded-md">Secciones: {customTemplate.secciones?.length}</span>
+                                            <span className="text-[8px] font-black text-blue-500 uppercase px-2 py-0.5 bg-blue-50 rounded-md">Campos: {customTemplate.datos_encabezado?.length}</span>
+                                        </div>
                                     </div>
-                                    <input type="checkbox" className="hidden" checked={formData.incluirImagenes} onChange={() => setFormData({ ...formData, incluirImagenes: !formData.incluirImagenes })} />
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Sugerir Imágenes</span>
-                                </label>
+                                )}
                             </div>
 
-                            <button type="submit" disabled={loading} className="w-full bg-forest-800 hover:bg-forest-900 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg hover:-translate-y-0.5 disabled:opacity-50">
-                                {loading ? <Loader2 className="animate-spin" /> : <Sparkles className="text-forest-300" />}
-                                {loading ? 'Redactando...' : 'Generar planificación'}
-                            </button>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                {customTemplate ? (
+                                    <div className="space-y-6 animate-fade-in">
+                                        <div className="p-4 bg-forest-50/50 rounded-2xl border border-forest-100 space-y-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Info className="text-forest-600 w-3.5 h-3.5" />
+                                                <h3 className="text-[10px] font-black text-forest-900 uppercase tracking-widest">Datos de la Plantilla</h3>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {customTemplate.datos_encabezado.map((field, idx) => (
+                                                    <FormField
+                                                        key={idx}
+                                                        label={field}
+                                                        name={field}
+                                                        icon={<Edit3 className="w-3.5 h-3.5" />}
+                                                        value={customTemplate.fields[field] || ''}
+                                                        onChange={(e) => {
+                                                            const newFields = { ...customTemplate.fields, [field]: e.target.value };
+                                                            setCustomTemplate({ ...customTemplate, fields: newFields });
+                                                        }}
+                                                        placeholder={`Ingresa ${field.toLowerCase()}...`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
 
-                            {error && <p className="text-red-600 text-xs bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
-                        </form>
+                                        {/* Optional: Add common controls that AI might need regardless of header */}
+                                        <div className="space-y-4">
+                                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configuración Adicional</h3>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">N° de Clases / Unidades</label>
+                                                    <select name="numClases" value={formData.numClases} onChange={handleChange} className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl text-xs">
+                                                        {[1, 2, 3, 4, 5, 10, 20].map(n => <option key={n} value={n}>{n} {n === 1 ? 'Unidad/Clase' : 'Unidades/Clases'}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Variedad</label>
+                                                    <select name="variedadActividades" value={formData.variedadActividades} onChange={handleChange} className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl text-xs">
+                                                        {['Baja', 'Media', 'Alta'].map(v => <option key={v} value={v}>{v}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField label="Institución" name="escuela" icon={<School className="w-3.5 h-3.5" />} value={formData.escuela} onChange={handleChange} placeholder="Ej. Colegio Nacional" />
+                                            <FormField label="Zona" name="zona" icon={<MapPin className="w-3.5 h-3.5" />} value={formData.zona} onChange={handleChange} placeholder="Ej. Zona V" />
+                                        </div>
+                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Datos del Docente</h3>
+                                            <FormField label="Nombre y Apellido" name="docente" icon={<User className="w-3.5 h-3.5" />} value={formData.docente} onChange={handleChange} placeholder="Nombre completo" />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField label="DNI" name="dni" icon={<IdCard className="w-3.5 h-3.5" />} value={formData.dni} onChange={handleChange} placeholder="8.888.888" />
+                                                <FormField label="Teléfono" name="telefono" icon={<Phone className="w-3.5 h-3.5" />} value={formData.telefono} onChange={handleChange} placeholder="3826..." />
+                                            </div>
+                                            <FormField label="Email" name="email" icon={<Mail className="w-3.5 h-3.5" />} value={formData.email} onChange={handleChange} placeholder="correo@ejemplo.com" />
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detalles Académicos</h3>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField label="Ciclo" name="ciclo" icon={<GraduationCap className="w-3.5 h-3.5" />} value={formData.ciclo} onChange={handleChange} placeholder="Ej. Ciclo Básico" />
+                                                <FormField label="Año" name="año" icon={<GraduationCap className="w-3.5 h-3.5" />} value={formData.año} onChange={handleChange} placeholder="Ej. 1er Año" />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField label="Materia" name="materia" icon={<ClipboardList className="w-3.5 h-3.5" />} value={formData.materia} onChange={handleChange} placeholder="Ej. Física" />
+                                                <FormField label="Año Lectivo" name="anioLectivo" icon={<Sparkles className="w-3.5 h-3.5" />} value={formData.anioLectivo} onChange={handleChange} placeholder="Ej. 2024" />
+                                            </div>
+                                            <FormField label="Eje Temático" name="tematica" icon={<BookOpen className="w-3.5 h-3.5" />} value={formData.tematica} onChange={handleChange} />
+                                            <FormField label="Título" name="titulo" icon={<Sparkles className="w-3.5 h-3.5" />} value={formData.titulo} onChange={handleChange} />
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">N° de Clases</label>
+                                                    <select name="numClases" value={formData.numClases} onChange={handleChange} className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl text-xs">
+                                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n}>{n} Clases</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                <button type="submit" disabled={loading} className="w-full py-4 bg-gradient-to-r from-forest-600 to-forest-800 text-white rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-3">
+                                    {loading ? <Loader2 className="animate-spin" /> : <Send size={18} />}
+                                    {loading ? 'GENERANDO SECUENCIA...' : 'GENERAR SECUENCIA DIDÁCTICA'}
+                                </button>
+                            </form>
+                        </div>
                     ) : (
-                        <div className="animate-fade-in space-y-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-sm font-bold text-slate-700">Edición en tiempo real</h2>
-                                <span className="text-[10px] text-forest-600 font-bold bg-forest-50 px-2 py-1 rounded-md">CAMBIOS SE GUARDAN AL PDF</span>
-                            </div>
-
-                            <Accordion
-                                title="1. Fundamentación"
-                                isOpen={editingSection === 'fund'}
-                                onClick={() => setEditingSection(editingSection === 'fund' ? null : 'fund')}
-                            >
-                                <textarea
-                                    className="w-full h-40 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none"
-                                    value={planningData.fundamentacion}
-                                    onChange={(e) => handleUpdatePlanning('fundamentacion', e.target.value)}
-                                />
+                        <div className="animate-fade-in space-y-6">
+                            <Accordion title="Identificación" isOpen={editingSection === 'header'} onClick={() => setEditingSection(editingSection === 'header' ? null : 'header')}>
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                    <FormField label="Institución" value={planningData.encabezado.escuela} onChange={(e) => handleUpdatePlanning('encabezado.escuela', e.target.value)} />
+                                    <FormField label="Docente" value={planningData.encabezado.docente} onChange={(e) => handleUpdatePlanning('encabezado.docente', e.target.value)} />
+                                </div>
                             </Accordion>
 
-                            <Accordion
-                                title="2. Propósitos y Objetivos"
-                                isOpen={editingSection === 'goals'}
-                                onClick={() => setEditingSection(editingSection === 'goals' ? null : 'goals')}
-                            >
-                                <div className="space-y-4">
+                            <Accordion title="Fundamentación" isOpen={editingSection === 'fundamentacion'} onClick={() => setEditingSection(editingSection === 'fundamentacion' ? null : 'fundamentacion')}>
+                                <textarea className="w-full h-48 p-3 text-xs border border-slate-100 rounded-xl" value={planningData.fundamentacion} onChange={(e) => handleUpdatePlanning('fundamentacion', e.target.value)} />
+                            </Accordion>
+
+                            <Accordion title="Contenidos y Objetivos" isOpen={editingSection === 'structure'} onClick={() => setEditingSection(editingSection === 'structure' ? null : 'structure')}>
+                                <div className="space-y-4 pt-2">
                                     <ListEditor label="Propósitos" items={planningData.estructura.propositos} onUpdate={(val) => handleUpdatePlanning('estructura.propositos', val)} />
+                                    <ListEditor label="Saberes" items={planningData.estructura.saberes} onUpdate={(val) => handleUpdatePlanning('estructura.saberes', val)} />
                                     <ListEditor label="Objetivos" items={planningData.estructura.objetivos} onUpdate={(val) => handleUpdatePlanning('estructura.objetivos', val)} />
                                 </div>
                             </Accordion>
 
-                            <Accordion
-                                title="3. Secuencia de Clases"
-                                isOpen={editingSection === 'classes'}
-                                onClick={() => setEditingSection(editingSection === 'classes' ? null : 'classes')}
-                            >
-                                {planningData.clases.map((clase, idx) => (
-                                    <div key={idx} className="mb-8 p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 shadow-inner">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="text-[10px] font-black text-forest-700 uppercase tracking-widest">Clase {idx + 1}</h4>
+                            <Accordion title="Plan de Clases" isOpen={editingSection === 'classes'} onClick={() => setEditingSection(editingSection === 'classes' ? null : 'classes')}>
+                                <div className="space-y-6 pt-2">
+                                    {planningData.clases.map((clase, idx) => (
+                                        <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <h4 className="text-[10px] font-black text-forest-700 uppercase mb-3">Clase {idx + 1}</h4>
+                                            <textarea className="w-full h-32 p-3 text-xs bg-white border border-slate-200 rounded-xl mb-3" value={clase.desarrollo} onChange={(e) => {
+                                                const newClases = [...planningData.clases];
+                                                newClases[idx].desarrollo = e.target.value;
+                                                handleUpdatePlanning('clases', newClases);
+                                            }} />
                                         </div>
-
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Título de la Clase</label>
-                                            <input
-                                                className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none"
-                                                value={clase.nombre}
-                                                onChange={(e) => {
-                                                    const newClases = [...planningData.clases];
-                                                    newClases[idx].nombre = e.target.value;
-                                                    handleUpdatePlanning('clases', newClases);
-                                                }}
-                                            />
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Inicio / Apertura</label>
-                                                <textarea
-                                                    className="w-full h-24 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
-                                                    value={clase.inicio}
-                                                    onChange={(e) => {
-                                                        const newClases = [...planningData.clases];
-                                                        newClases[idx].inicio = e.target.value;
-                                                        handleUpdatePlanning('clases', newClases);
-                                                    }}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Desarrollo de Actividades</label>
-                                                <textarea
-                                                    className="w-full h-48 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
-                                                    value={clase.desarrollo}
-                                                    onChange={(e) => {
-                                                        const newClases = [...planningData.clases];
-                                                        newClases[idx].desarrollo = e.target.value;
-                                                        handleUpdatePlanning('clases', newClases);
-                                                    }}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Cierre / Síntesis</label>
-                                                <textarea
-                                                    className="w-full h-24 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
-                                                    value={clase.cierre}
-                                                    onChange={(e) => {
-                                                        const newClases = [...planningData.clases];
-                                                        newClases[idx].cierre = e.target.value;
-                                                        handleUpdatePlanning('clases', newClases);
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Multimedia Section */}
-                                        <div className="pt-4 border-t border-slate-200 mt-4 space-y-4">
-                                            <div className="flex items-center gap-2 text-forest-700">
-                                                <Youtube size={14} />
-                                                <span className="text-[10px] font-bold uppercase tracking-wider">Recursos Multimedia</span>
-                                            </div>
-
-                                            {/* YouTube Link */}
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-2">
-                                                    <input
-                                                        placeholder="URL de Video de YouTube"
-                                                        className="flex-1 p-2 text-[10px] border border-slate-200 rounded-lg"
-                                                        value={clase.youtube_url || ''}
-                                                        onChange={(e) => {
-                                                            const newClases = [...planningData.clases];
-                                                            newClases[idx].youtube_url = e.target.value;
-                                                            handleUpdatePlanning('clases', newClases);
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Image Upload Simulation */}
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-[9px] font-bold text-slate-400 uppercase block">Imagen Ilustrativa</label>
-                                                    {clase.imagen && (
-                                                        <select
-                                                            className="text-[9px] font-bold text-forest-700 bg-forest-50 border border-forest-200 rounded px-2 py-0.5 outline-none"
-                                                            value={clase.imagen_posicion || 'desarrollo'}
-                                                            onChange={(e) => {
-                                                                const newClases = [...planningData.clases];
-                                                                newClases[idx].imagen_posicion = e.target.value;
-                                                                handleUpdatePlanning('clases', newClases);
-                                                            }}
-                                                        >
-                                                            <option value="inicio">En Inicio</option>
-                                                            <option value="desarrollo">En Desarrollo</option>
-                                                            <option value="cierre">En Cierre</option>
-                                                        </select>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    {clase.imagen ? (
-                                                        <div className="relative group">
-                                                            <img src={clase.imagen} className="w-16 h-16 object-cover rounded-lg border border-slate-200" alt="Vista previa" />
-                                                            <button
-                                                                onClick={() => {
-                                                                    const newClases = [...planningData.clases];
-                                                                    delete newClases[idx].imagen;
-                                                                    handleUpdatePlanning('clases', newClases);
-                                                                }}
-                                                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            >
-                                                                <X size={10} />
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <label className="flex flex-col items-center justify-center w-16 h-16 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-forest-500 transition-colors">
-                                                            <ImageIcon size={16} className="text-slate-400" />
-                                                            <input
-                                                                type="file"
-                                                                className="hidden"
-                                                                accept="image/*"
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files[0];
-                                                                    if (file) {
-                                                                        const reader = new FileReader();
-                                                                        reader.onloadend = () => {
-                                                                            const newClases = [...planningData.clases];
-                                                                            newClases[idx].imagen = reader.result;
-                                                                            handleUpdatePlanning('clases', newClases);
-                                                                        };
-                                                                        reader.readAsDataURL(file);
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </label>
-                                                    )}
-                                                    <div className="flex-1 space-y-2">
-                                                        <input
-                                                            placeholder="O pega una URL de imagen aquí..."
-                                                            className="w-full p-2 text-[10px] border border-slate-200 rounded-lg"
-                                                            value={clase.imagen_url || ''}
-                                                            onChange={(e) => {
-                                                                const newClases = [...planningData.clases];
-                                                                newClases[idx].imagen_url = e.target.value;
-                                                                handleUpdatePlanning('clases', newClases);
-                                                            }}
-                                                        />
-                                                        <p className="text-[9px] text-slate-400 leading-tight">Sube una imagen o pega un enlace directo. Se incluirá en el PDF final.</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </Accordion>
                         </div>
                     )}
                 </div>
 
-                {/* Footer with export buttons */}
-                <div className="p-6 border-t border-slate-100 bg-slate-50/50 shrink-0">
-                    {planningData ? (
-                        <div className="space-y-3">
-                            <button
-                                onClick={() => exportToWord(planningData)}
-                                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all hover:-translate-y-0.5"
-                            >
-                                <FileDown className="w-4 h-4" />
-                                DESCARGAR WORD (.docx)
+                <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+                    {planningData && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => exportToWord(planningData)} className="flex items-center justify-center gap-2 bg-blue-600 text-white text-[10px] font-bold py-3 rounded-xl shadow-lg">
+                                <FileDown size={14} /> WORD
                             </button>
-                            <PDFDownloadLink
-                                document={<PlantillaETA data={planningData} />}
-                                fileName={`Secuencia_${planningData.encabezado.materia}.pdf`}
-                                className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all hover:-translate-y-0.5"
-                            >
-                                {({ loading }) => (
-                                    <>
-                                        <Download className="w-4 h-4" />
-                                        {loading ? 'PREPARANDO PDF...' : 'DESCARGAR PDF'}
-                                    </>
-                                )}
+                            <PDFDownloadLink document={<PlantillaETA data={planningData} />} fileName="Secuencia.pdf" className="flex items-center justify-center gap-2 bg-slate-800 text-white text-[10px] font-bold py-3 rounded-xl shadow-lg">
+                                <Download size={14} /> PDF
                             </PDFDownloadLink>
                         </div>
-                    ) : (
-                        <p className="text-[10px] text-slate-400 font-bold text-center tracking-widest uppercase opacity-50">SIN DOCUMENTO PARA EXPORTAR</p>
                     )}
                 </div>
             </aside>
 
-            {/* Main Content: PDF Preview */}
-            <main className="flex-1 relative bg-[#cbd5e1] overflow-hidden flex flex-col">
-                <header className="h-14 bg-white/80 backdrop-blur-md z-10 flex items-center justify-between px-8 border-b border-slate-200">
-                    <div className="flex items-center gap-4">
-                        <Eye className="w-4 h-4 text-forest-600" />
-                        <span className="text-slate-800 text-xs font-bold tracking-tight">Previsualización de Documento Final</span>
+            <main className="flex-1 bg-slate-200 p-6">
+                {planningData ? (
+                    <div className="w-full h-full bg-white rounded-3xl shadow-2xl overflow-hidden">
+                        <PDFViewer className="w-full h-full border-none"><PlantillaETA data={planningData} /></PDFViewer>
                     </div>
-                </header>
-
-                <div className="flex-1 p-6 flex items-center justify-center overflow-hidden">
-                    {planningData ? (
-                        <div className="w-full h-full shadow-2xl rounded-xl overflow-hidden bg-white">
-                            <PDFViewer className="w-full h-full border-none">
-                                <PlantillaETA data={planningData} />
-                            </PDFViewer>
-                        </div>
-                    ) : (
-                        <div className="text-center space-y-4 max-w-sm">
-                            <div className="w-20 h-20 bg-white/50 rounded-full flex items-center justify-center mx-auto ring-8 ring-white/20">
-                                <FileText size={32} className="text-slate-400" />
-                            </div>
-                            <h2 className="text-xl font-bold text-slate-700">Esperando información</h2>
-                            <p className="text-xs text-slate-500 leading-relaxed">Una vez que generes o edites tu secuencia didáctica, aparecerá aquí el documento listo para descargar.</p>
-                        </div>
-                    )}
-                </div>
+                ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
+                        <FileText size={64} />
+                        <p className="text-sm font-bold uppercase tracking-widest text-slate-500">Esperando información...</p>
+                    </div>
+                )}
             </main>
         </div>
     );
 };
 
 const FormField = ({ label, name, icon, value, onChange, placeholder }) => (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 w-full">
         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</label>
-        <div className="relative group">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-forest-600 transition-colors">{icon}</div>
-            <input required name={name} value={value} onChange={onChange} placeholder={placeholder} className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm text-xs focus:ring-2 focus:ring-forest-500/10 focus:border-forest-600 outline-none transition-all" />
+        <div className="relative group flex items-center">
+            {icon && <div className="absolute left-3 text-slate-400">{icon}</div>}
+            <input name={name} value={value} onChange={onChange} placeholder={placeholder} className={`w-full ${icon ? 'pl-9' : 'px-3'} py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm text-xs focus:ring-2 focus:ring-forest-500/10 focus:border-forest-600 outline-none`} />
         </div>
     </div>
 );
 
 const Accordion = ({ title, children, isOpen, onClick }) => (
     <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-        <button onClick={onClick} className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+        <button onClick={onClick} className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50">
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{title}</span>
-            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
-        {isOpen && <div className="p-4 pt-0 animate-slide-down">{children}</div>}
+        {isOpen && <div className="p-4 pt-0 border-t border-slate-50">{children}</div>}
     </div>
 );
 
@@ -525,14 +395,7 @@ const ListEditor = ({ label, items, onUpdate }) => {
         <div className="space-y-2">
             <label className="text-[9px] font-bold text-slate-400 uppercase">{label}</label>
             {items.map((item, idx) => (
-                <div key={idx} className="flex gap-2">
-                    <span className="text-slate-300 pt-1 text-xs">•</span>
-                    <textarea
-                        className="w-full p-2 text-xs border border-slate-100 rounded-lg"
-                        value={item}
-                        onChange={(e) => handleItemChange(idx, e.target.value)}
-                    />
-                </div>
+                <textarea key={idx} className="w-full p-2 text-xs border border-slate-100 rounded-lg" value={item} onChange={(e) => handleItemChange(idx, e.target.value)} />
             ))}
         </div>
     );

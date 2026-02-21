@@ -12,7 +12,6 @@ import {
     AlignmentType,
     ShadingType,
     VerticalAlign,
-    Margins,
     PageOrientation
 } from "docx";
 import { saveAs } from "file-saver";
