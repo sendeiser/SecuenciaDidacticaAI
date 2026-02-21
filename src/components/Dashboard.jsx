@@ -65,7 +65,31 @@ const Dashboard = () => {
 
     // New states for Custom Templates
     const [customTemplate, setCustomTemplate] = useState(null);
+    const [templateType, setTemplateType] = useState('standard'); // 'standard' or 'custom'
     const [analyzingDoc, setAnalyzingDoc] = useState(false);
+
+    // Load template from localStorage
+    useEffect(() => {
+        const savedTemplate = localStorage.getItem('customTemplate');
+        if (savedTemplate) {
+            try {
+                const parsed = JSON.parse(savedTemplate);
+                setCustomTemplate(parsed);
+                setTemplateType('custom');
+            } catch (e) {
+                console.error("Error loading template from localStorage", e);
+            }
+        }
+    }, []);
+
+    // Save template to localStorage
+    useEffect(() => {
+        if (customTemplate) {
+            localStorage.setItem('customTemplate', JSON.stringify(customTemplate));
+        } else {
+            localStorage.removeItem('customTemplate');
+        }
+    }, [customTemplate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -104,6 +128,7 @@ const Dashboard = () => {
                 rawText: text,
                 fields: templateFields
             });
+            setTemplateType('custom');
             setError(`¡Plantilla "${structure.nombre_plantilla}" detectada con éxito!`);
         } catch (err) {
             console.error(err);
@@ -118,7 +143,10 @@ const Dashboard = () => {
         setLoading(true);
         setError(null);
         try {
-            const data = await generatePlanning({ ...formData, template: customTemplate });
+            const data = await generatePlanning({
+                ...formData,
+                template: templateType === 'custom' ? customTemplate : null
+            });
             setPlanningData(data);
             setActiveTab('editor');
         } catch (err) {
@@ -168,43 +196,63 @@ const Dashboard = () => {
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth scrollbar-thin scrollbar-thumb-slate-200">
                     {activeTab === 'generator' ? (
                         <div className="space-y-6 animate-fade-in">
-                            {/* Template System */}
-                            <div className="p-5 bg-gradient-to-br from-forest-50 to-white rounded-3xl border border-forest-100 shadow-sm space-y-4">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Sparkles className="text-forest-600 w-4 h-4" />
-                                    <h3 className="text-[10px] font-black text-forest-900 uppercase tracking-widest">Sistema de Plantillas</h3>
-                                </div>
-                                <p className="text-[10px] text-slate-500 leading-relaxed">Sube un documento base para que la IA aprenda su estructura.</p>
-                                <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${analyzingDoc ? 'bg-slate-50 border-slate-200' : 'bg-white border-forest-200 hover:border-forest-500 hover:bg-forest-50/30'}`}>
-                                    {analyzingDoc ? (
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Loader2 className="w-6 h-6 text-forest-600 animate-spin" />
-                                            <span className="text-[10px] font-bold text-forest-700 animate-pulse">ANALIZANDO...</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-2 text-forest-600">
-                                            <Plus className="w-5 h-5" />
-                                            <span className="text-[10px] font-bold uppercase">Subir Documento Base</span>
-                                        </div>
-                                    )}
-                                    <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleFileUpload} disabled={analyzingDoc} />
-                                </label>
-                                {customTemplate && (
-                                    <div className="p-4 bg-white rounded-2xl border border-forest-100 shadow-sm animate-slide-up">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-[11px] font-bold text-slate-700 truncate max-w-[150px]">{customTemplate.fileName}</span>
-                                            <button onClick={() => setCustomTemplate(null)}><X size={14} className="text-slate-400 hover:text-red-500" /></button>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <span className="text-[8px] font-black text-forest-500 uppercase px-2 py-0.5 bg-forest-50 rounded-md">Secciones: {customTemplate.secciones?.length}</span>
-                                            <span className="text-[8px] font-black text-blue-500 uppercase px-2 py-0.5 bg-blue-50 rounded-md">Campos: {customTemplate.datos_encabezado?.length}</span>
-                                        </div>
-                                    </div>
-                                )}
+                            {/* Template Type Switcher */}
+                            <div className="flex bg-slate-100 p-1 rounded-2xl ring-1 ring-slate-200">
+                                <button
+                                    onClick={() => setTemplateType('standard')}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-[10px] font-black uppercase transition-all ${templateType === 'standard' ? 'bg-white text-forest-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    <Sparkles className="w-3 h-3" />
+                                    Estándar ETA
+                                </button>
+                                <button
+                                    onClick={() => setTemplateType('custom')}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-[10px] font-black uppercase transition-all ${templateType === 'custom' ? 'bg-white text-forest-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    <FileText className="w-3 h-3" />
+                                    Personalizada
+                                </button>
                             </div>
 
+                            {/* Template System (Only if Custom or to Upload) */}
+                            {templateType === 'custom' && (
+                                <div className="p-5 bg-gradient-to-br from-forest-50 to-white rounded-3xl border border-forest-100 shadow-sm space-y-4">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Sparkles className="text-forest-600 w-4 h-4" />
+                                        <h3 className="text-[10px] font-black text-forest-900 uppercase tracking-widest">Sistema de Plantillas</h3>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 leading-relaxed">Sube un documento base para que la IA aprenda su estructura.</p>
+                                    <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${analyzingDoc ? 'bg-slate-50 border-slate-200' : 'bg-white border-forest-200 hover:border-forest-500 hover:bg-forest-50/30'}`}>
+                                        {analyzingDoc ? (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Loader2 className="w-6 h-6 text-forest-600 animate-spin" />
+                                                <span className="text-[10px] font-bold text-forest-700 animate-pulse">ANALIZANDO...</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2 text-forest-600">
+                                                <Plus className="w-5 h-5" />
+                                                <span className="text-[10px] font-bold uppercase">Subir Documento Base</span>
+                                            </div>
+                                        )}
+                                        <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleFileUpload} disabled={analyzingDoc} />
+                                    </label>
+                                    {customTemplate && (
+                                        <div className="p-4 bg-white rounded-2xl border border-forest-100 shadow-sm animate-slide-up">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[11px] font-bold text-slate-700 truncate max-w-[150px]">{customTemplate.fileName}</span>
+                                                <button onClick={() => { setCustomTemplate(null); setTemplateType('standard'); }}><X size={14} className="text-slate-400 hover:text-red-500" /></button>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <span className="text-[8px] font-black text-forest-500 uppercase px-2 py-0.5 bg-forest-50 rounded-md">Secciones: {customTemplate.secciones?.length}</span>
+                                                <span className="text-[8px] font-black text-blue-500 uppercase px-2 py-0.5 bg-blue-50 rounded-md">Campos: {customTemplate.datos_encabezado?.length}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <form onSubmit={handleSubmit} className="space-y-6">
-                                {customTemplate ? (
+                                {templateType === 'custom' && customTemplate ? (
                                     <div className="space-y-6 animate-fade-in">
                                         <div className="p-4 bg-forest-50/50 rounded-2xl border border-forest-100 space-y-4">
                                             <div className="flex items-center gap-2 mb-2">
