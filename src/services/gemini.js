@@ -4,8 +4,7 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
 
   const prompt = `
     Actúa como un EXPERTO PEDAGOGO y PLANIFICADOR CURRICULAR para nivel secundario técnico, con más de 20 años de experiencia. Tu tarea es generar una "Secuencia Didáctica" COMPLETA, EXTENSA y ALTAMENTE DESARROLLADA basada en la siguiente información:
-    - Institución: ${formData.escuela}
-    - Zona: ${formData.zona}
+    - Institución: ${formData.escuela}
     - Docente: ${formData.docente}
     - DNI: ${formData.dni}
     - Email: ${formData.email}
@@ -97,18 +96,18 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
     8. CITAS APA: Insertar citas en el texto (Autor, Año) en la fundamentación. Bibliografía en formato APA 7 completo.
     9. DIFERENCIACIÓN: Siempre incluir adaptación para alumnos avanzados Y para alumnos con dificultades.
 
+    PROHIBICIÓN ABSOLUTA: No uses frases como "El docente explicará...", "Se realizarán ejercicios...", "Se debatirá...". 
+    REQUISITO OBLIGATORIO: Debes escribir el TEXTO EXACTO que el alumno leerá. Si es un video, describe qué pasa en el minuto X. Si es un problema, escribe los números y datos exactos.
+
     RESPONDE SOLO EL JSON PURO. Sin explicaciones, sin bloques markdown, sin texto fuera del JSON.
 
     ${wizardAnswers ? `
     ═══════════════════════════════════
-    INFORMACIÓN ADICIONAL DEL DOCENTE (muy importante para personalizar):
+    CONTEXTO ESPECÍFICO DEL DOCENTE (Respuestas al Wizard):
     ═══════════════════════════════════
-    - Punto de partida de los alumnos: ${wizardAnswers.puntoPart || 'No especificado'}
-    - Tipo de problemas a priorizar: ${wizardAnswers.tipoProblemas || 'No especificado'}
-    - Modalidad de trabajo: ${wizardAnswers.modalidadTrabajo || 'No especificado'}
-    - Producto o proyecto final esperado: ${wizardAnswers.productoFinal || 'No especificado'}
-    - Dificultades comunes de los alumnos: ${wizardAnswers.dificultades || 'No especificado'}
-    Estas respuestas DEBEN influir directamente en el diseño de actividades, la diferenciación y el cierre de cada clase.
+    ${Object.entries(wizardAnswers).map(([id, answer]) => `- Pregunta ${id}: ${answer}`).join('\n')}
+    
+    ESTAS RESPUESTAS SON TU GUÍA PRINCIPAL. Si el docente menciona un problema específico o una dificultad, la secuencia DEBE resolver eso directamente.
     ` : ''}
   `;
 
@@ -147,5 +146,101 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
   } catch (error) {
     console.error("Error generating generic planning:", error);
     throw error;
+  }
+};
+
+/**
+ * Generates 5 personalized wizard questions based on form data using AI.
+ * Questions are contextual to the subject, topic, and cycle.
+ */
+export const generateWizardQuestions = async (formData) => {
+  const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+  const MODEL = "llama-3.3-70b-versatile";
+
+  const prompt = `
+    Sos un experto pedagogo con 20 años de experiencia en educación secundaria técnica.
+    Un docente de ${formData.materia} para ${formData.ciclo} ${formData.año}, va a crear una secuencia didáctica sobre:
+    "${formData.titulo}" (Eje: ${formData.tematica}).
+
+    Tu tarea es generar EXACTAMENTE 5 preguntas de sondeo MUY ESPECÍFICAS Y RELEVANTES para este docente,
+    antes de que genere la secuencia. Las preguntas deben ayudar a:
+    - Diagnosticar el punto de partida de los alumnos con ESTE TEMA CONCRETO.
+    - Descubrir qué tipo de actividades o problemas reales son más útiles para ESTA MATERIA.
+    - Identificar dificultades conocidas en ${formData.materia} para ${formData.ciclo}.
+    - Entender si hay un producto final o proyecto.
+    - Conocer la modalidad de trabajo preferida.
+
+    MUY IMPORTANTE: Las preguntas deben ser CONCRETAS y referenciar directamente la materia, el eje temático y el nivel.
+    NO hagas preguntas genéricas como "¿Cuál es tu metodología?"
+    SÍ haz preguntas como "¿Tus alumnos ya trabajaron con [concepto específico de la materia]?" o
+    "¿Qué tipo de errores cometen más al resolver [tipo de problema concreto]?"
+
+    Responde ÚNICAMENTE con un JSON válido, sin texto extra:
+    {
+      "preguntas": [
+        {
+          "id": "q1",
+          "label": "Texto completo de la pregunta (que mencione el tema o materia específica)",
+          "placeholder": "Ejemplo de respuesta esperada muy concreta y útil para el generador",
+          "tipo": "textarea"
+        },
+        {
+          "id": "q2",
+          "label": "...",
+          "placeholder": "...",
+          "tipo": "texto"
+        },
+        {
+          "id": "q3",
+          "label": "...",
+          "placeholder": "...",
+          "tipo": "select",
+          "opciones": ["Opción 1", "Opción 2", "Opción 3", "Opción 4"]
+        },
+        { "id": "q4", "label": "...", "placeholder": "...", "tipo": "textarea" },
+        { "id": "q5", "label": "...", "placeholder": "...", "tipo": "textarea" }
+      ]
+    }
+    Los tipos posibles son: "textarea", "texto", "select" (solo para pregunta 3).
+    Para las de tipo "select", agregá un array "opciones" con 4-5 valores contextuales a la materia.
+  `;
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: "system", content: "Eres un generador de preguntas pedagógicas que solo responde en formato JSON puro." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.8,
+        response_format: { type: "json_object" }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || "Error al generar preguntas");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    const parsed = JSON.parse(content);
+    return parsed.preguntas || [];
+  } catch (error) {
+    console.error("Error generating wizard questions:", error);
+    // Return fallback questions if AI fails
+    return [
+      { id: 'q1', label: `¿Cuál es el punto de partida de tus alumnos con "${formData.tematica}"?`, placeholder: 'Ej: Ya conocen los conceptos básicos, pero no la aplicación práctica...', tipo: 'textarea' },
+      { id: 'q2', label: '¿Qué tipo de problemas o situaciones querés priorizar?', placeholder: 'Ej: Problemas de la vida real, ejercicios de cálculo, análisis de textos...', tipo: 'textarea' },
+      { id: 'q3', label: 'Modalidad de trabajo en clase', placeholder: '', tipo: 'select', opciones: ['Individual', 'Grupal (parejas)', 'Grupal (equipos de 3-4)', 'Mixta (individual y grupal)', 'Plenaria / Clase colectiva'] },
+      { id: 'q4', label: '¿Hay un proyecto o producto final al terminar la secuencia?', placeholder: 'Ej: Una maqueta, un informe escrito, una exposición oral...', tipo: 'textarea' },
+      { id: 'q5', label: `¿Qué dificultades comunes tienen tus alumnos con "${formData.tematica}"?`, placeholder: 'Ej: Confunden X con Y, no recuerdan las fórmulas...', tipo: 'textarea' },
+    ];
   }
 };

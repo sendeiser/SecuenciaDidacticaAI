@@ -31,7 +31,7 @@ import {
     ExternalLink
 } from 'lucide-react';
 import PlantillaETA from './PlantillaETA';
-import { generatePlanning } from '../services/gemini';
+import { generatePlanning, generateWizardQuestions } from '../services/gemini';
 import { exportToWord } from '../services/wordExport';
 
 const Dashboard = () => {
@@ -56,17 +56,13 @@ const Dashboard = () => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [loadingQuestions, setLoadingQuestions] = useState(false);
     const [planningData, setPlanningData] = useState(null);
     const [activeTab, setActiveTab] = useState('generator'); // 'generator', 'questions', 'editor'
     const [error, setError] = useState(null);
     const [editingSection, setEditingSection] = useState(null);
-    const [wizardData, setWizardData] = useState({
-        puntoPart: '',
-        tipoProblemas: '',
-        modalidadTrabajo: 'Mixta (individual y grupal)',
-        productoFinal: '',
-        dificultades: ''
-    });
+    const [wizardData, setWizardData] = useState({});
+    const [aiQuestions, setAiQuestions] = useState([]);
     const [showWizard, setShowWizard] = useState(false);
     const [savedFormData, setSavedFormData] = useState(null);
 
@@ -115,11 +111,29 @@ const Dashboard = () => {
         setPlanningData(newData);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Save form data and show the wizard
-        setSavedFormData(formData);
-        setShowWizard(true);
+        setLoadingQuestions(true);
+        setError(null);
+        try {
+            const questions = await generateWizardQuestions(formData);
+            setAiQuestions(questions);
+
+            // Initialize wizardData with question IDs
+            const initialWizardData = {};
+            questions.forEach(q => {
+                initialWizardData[q.id] = q.tipo === 'select' ? (q.opciones?.[0] || '') : '';
+            });
+            setWizardData(initialWizardData);
+
+            setSavedFormData(formData);
+            setShowWizard(true);
+        } catch (err) {
+            setError('Error al conectar con la IA para las preguntas. Reintenta.');
+            console.error(err);
+        } finally {
+            setLoadingQuestions(false);
+        }
     };
 
     const handleWizardSubmit = async () => {
@@ -141,6 +155,18 @@ const Dashboard = () => {
     return (
         <div className="flex h-screen bg-[#f1f5f9] font-sans selection:bg-forest-100 selection:text-forest-900">
 
+            {/* ── LOADING QUESTIONS OVERLAY ── */}
+            {loadingQuestions && (
+                <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-forest-900/90 backdrop-blur-md animate-fade-in text-white p-6 text-center">
+                    <div className="relative mb-6">
+                        <div className="w-20 h-20 border-4 border-white/20 border-t-forest-300 rounded-full animate-spin"></div>
+                        <Sparkles className="absolute inset-0 m-auto text-forest-300 animate-pulse" size={30} />
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Personalizando tu experiencia...</h2>
+                    <p className="text-forest-300 text-sm max-w-sm">La IA está analizando tu tema para generarte preguntas específicas de tu materia.</p>
+                </div>
+            )}
+
             {/* ── WIZARD MODAL OVERLAY ── */}
             {showWizard && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -159,49 +185,36 @@ const Dashboard = () => {
 
                         {/* Wizard Questions */}
                         <div className="p-6 space-y-5 max-h-[65vh] overflow-y-auto">
-                            <WizardQuestion
-                                number="1"
-                                label="¿Cuál es el punto de partida de tus alumnos con este tema?"
-                                placeholder="Ej: Ya saben suma y resta, pero no multiplicación..."
-                                value={wizardData.puntoPart}
-                                onChange={(v) => setWizardData({ ...wizardData, puntoPart: v })}
-                            />
-                            <WizardQuestion
-                                number="2"
-                                label="¿Qué tipo de problemas o situaciones querés priorizar?"
-                                placeholder="Ej: Problemas de la vida real, ejercicios de cálculo, análisis de textos..."
-                                value={wizardData.tipoProblemas}
-                                onChange={(v) => setWizardData({ ...wizardData, tipoProblemas: v })}
-                            />
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-5 h-5 bg-forest-100 text-forest-700 rounded-full text-[10px] font-black flex items-center justify-center">3</span>
-                                    <label className="text-xs font-bold text-slate-600">Modalidad de trabajo en clase</label>
+                            {aiQuestions.map((q, idx) => (
+                                <div key={q.id}>
+                                    {q.tipo === 'select' ? (
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-5 h-5 bg-forest-100 text-forest-700 rounded-full text-[10px] font-black flex items-center justify-center">{idx + 1}</span>
+                                                <label className="text-xs font-bold text-slate-600">{q.label}</label>
+                                            </div>
+                                            <select
+                                                value={wizardData[q.id] || ''}
+                                                onChange={(e) => setWizardData({ ...wizardData, [q.id]: e.target.value })}
+                                                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-forest-500/20 focus:border-forest-600 outline-none"
+                                            >
+                                                {(q.opciones || []).map(o => (
+                                                    <option key={o} value={o}>{o}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <WizardQuestion
+                                            number={idx + 1}
+                                            label={q.label}
+                                            placeholder={q.placeholder}
+                                            type={q.tipo}
+                                            value={wizardData[q.id] || ''}
+                                            onChange={(v) => setWizardData({ ...wizardData, [q.id]: v })}
+                                        />
+                                    )}
                                 </div>
-                                <select
-                                    value={wizardData.modalidadTrabajo}
-                                    onChange={(e) => setWizardData({ ...wizardData, modalidadTrabajo: e.target.value })}
-                                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-forest-500/20 focus:border-forest-600 outline-none"
-                                >
-                                    {['Individual', 'Grupal (parejas)', 'Grupal (equipos de 3-4)', 'Mixta (individual y grupal)', 'Plenaria / Clase colectiva'].map(o => (
-                                        <option key={o} value={o}>{o}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <WizardQuestion
-                                number="4"
-                                label="¿Hay un proyecto, producto o entrega final al terminar la secuencia?"
-                                placeholder="Ej: Una maqueta, un informe escrito, una exposición oral, una evaluación..."
-                                value={wizardData.productoFinal}
-                                onChange={(v) => setWizardData({ ...wizardData, productoFinal: v })}
-                            />
-                            <WizardQuestion
-                                number="5"
-                                label="¿Qué dificultades o errores comunes tienen tus alumnos con este tema?"
-                                placeholder="Ej: Confunden el sujeto con el predicado, no recuerdan las fórmulas..."
-                                value={wizardData.dificultades}
-                                onChange={(v) => setWizardData({ ...wizardData, dificultades: v })}
-                            />
+                            ))}
                         </div>
 
                         {/* Wizard Footer */}
@@ -666,19 +679,29 @@ const ListEditor = ({ label, items, onUpdate }) => {
     );
 };
 
-const WizardQuestion = ({ number, label, placeholder, value, onChange }) => (
+const WizardQuestion = ({ number, label, placeholder, type, value, onChange }) => (
     <div className="space-y-1.5">
         <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-forest-100 text-forest-700 rounded-full text-[10px] font-black flex items-center justify-center shrink-0">{number}</span>
             <label className="text-xs font-bold text-slate-600">{label}</label>
         </div>
-        <textarea
-            rows={2}
-            placeholder={placeholder}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-forest-500/20 focus:border-forest-600 outline-none resize-none transition-all"
-        />
+        {type === 'textarea' ? (
+            <textarea
+                rows={2}
+                placeholder={placeholder}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-forest-500/20 focus:border-forest-600 outline-none resize-none transition-all"
+            />
+        ) : (
+            <input
+                type="text"
+                placeholder={placeholder}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-forest-500/20 focus:border-forest-600 outline-none transition-all"
+            />
+        )}
     </div>
 );
 
