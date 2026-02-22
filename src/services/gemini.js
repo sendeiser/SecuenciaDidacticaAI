@@ -1,4 +1,4 @@
-export const generatePlanning = async (formData) => {
+export const generatePlanning = async (formData, wizardAnswers = null) => {
   const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
   const MODEL = "llama-3.3-70b-versatile";
 
@@ -83,7 +83,7 @@ export const generatePlanning = async (formData) => {
     - PROHIBIDO textos vagos o genéricos de menos de 3 oraciones en cualquier campo.
 
     ✅ OBLIGACIONES:
-    1. EXTENSIÓN: Cada campo "desarrollo" debe tener MÍNIMO 250 PALABRAS.
+    1. EXTENSIÓN: Cada campo "desarrollo" debe tener MÍNIMO 400 PALABRAS.
     2. ACTIVIDADES COMPLETAS: Cada actividad numerada debe incluir SU CONSIGNA LITERAL, COMPLETA, con todos los datos.
        - Matemática: "Resuelve el siguiente sistema de ecuaciones usando el método de sustitución: 2x + 3y = 12 / x - y = 1"
        - Lengua: "Lee el siguiente fragmento de 'El aleph' de Borges: '[párrafo de ejemplo]'. Luego responde: 1. Identificá el narrador y justificá. 2. ¿Qué recursos retóricos identificás?"
@@ -98,6 +98,18 @@ export const generatePlanning = async (formData) => {
     9. DIFERENCIACIÓN: Siempre incluir adaptación para alumnos avanzados Y para alumnos con dificultades.
 
     RESPONDE SOLO EL JSON PURO. Sin explicaciones, sin bloques markdown, sin texto fuera del JSON.
+
+    ${wizardAnswers ? `
+    ═══════════════════════════════════
+    INFORMACIÓN ADICIONAL DEL DOCENTE (muy importante para personalizar):
+    ═══════════════════════════════════
+    - Punto de partida de los alumnos: ${wizardAnswers.puntoPart || 'No especificado'}
+    - Tipo de problemas a priorizar: ${wizardAnswers.tipoProblemas || 'No especificado'}
+    - Modalidad de trabajo: ${wizardAnswers.modalidadTrabajo || 'No especificado'}
+    - Producto o proyecto final esperado: ${wizardAnswers.productoFinal || 'No especificado'}
+    - Dificultades comunes de los alumnos: ${wizardAnswers.dificultades || 'No especificado'}
+    Estas respuestas DEBEN influir directamente en el diseño de actividades, la diferenciación y el cierre de cada clase.
+    ` : ''}
   `;
 
   try {
@@ -119,7 +131,7 @@ export const generatePlanning = async (formData) => {
             content: prompt
           }
         ],
-        temperature: 0.6,
+        temperature: 0.75,
         response_format: { type: "json_object" }
       })
     });
