@@ -104,15 +104,15 @@ export const generatePlanning = async (formData) => {
         messages: [
           {
             role: "system",
-            content: "Eres un experto pedagogo que genera documentos educativos en formato JSON."
+            content: "Eres un experto pedagogo que genera documentos educativos en formato JSON. Tu respuesta debe ser EXCLUSIVAMENTE el objeto JSON, sin texto explicativo antes ni después."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        temperature: 0.6,
-        response_format: { type: "json_object" }
+        temperature: 0.5,
+        max_tokens: 8000
       })
     });
 
@@ -174,10 +174,11 @@ export const analyzeDocumentStructure = async (docText) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPrompt + " IMPORTANTE: Tu respuesta debe ser un JSON válido." },
           { role: "user", content: userPrompt }
         ],
         temperature: 0.1,
+        max_tokens: 4000,
         response_format: { type: "json_object" }
       })
     });
