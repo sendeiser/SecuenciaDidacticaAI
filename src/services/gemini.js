@@ -1,6 +1,28 @@
+import { searchEducationalResources } from './tavily';
+
 export const generatePlanning = async (formData, wizardAnswers = null) => {
   const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
   const MODEL = "llama-3.3-70b-versatile";
+
+  // 1. Pre-generation: Search for real educational resources (Argentina)
+  let searchContext = "";
+  try {
+    const searchResults = await searchEducationalResources(`${formData.materia} ${formData.tematica}`);
+    if (searchResults && searchResults.length > 0) {
+      searchContext = `
+    ═══════════════════════════════════
+    RECURSOS REALES ENCONTRADOS EN LA WEB (Argentina/Educ.ar):
+    ═══════════════════════════════════
+    ${searchResults.map(r => `- ${r.title}: ${r.content} (Fuente: ${r.url})`).join('\n')}
+    
+    USA ESTOS RECURSOS PARA:
+    - Incluir links reales en la bibliografía o recursos.
+    - Basar tus ejercicios en las propuestas reales encontradas si son de calidad.
+    `;
+    }
+  } catch (err) {
+    console.warn("Search failed, proceeding without web context", err);
+  }
 
   const prompt = `
     Actúa como un EXPERTO PEDAGOGO y PLANIFICADOR CURRICULAR para nivel secundario técnico, con más de 20 años de experiencia. Tu tarea es generar una "Secuencia Didáctica" COMPLETA, EXTENSA y ALTAMENTE DESARROLLADA basada en la siguiente información:
@@ -48,8 +70,8 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
       "clases": [
         {
           "nombre": "Título de la Clase",
-          "inicio": "Inicio detallado (mínimo 100 palabras). Incluir preguntas disparadoras.",
-          "desarrollo": "Desarrollo con EXACTAMENTE ${formData.cantActividades} ACTIVIDADES NUMERADAS. Mínimo 250-300 palabras finales por cada clase. CADA ACTIVIDAD debe incluir el TEXTO LITERAL de la consigna y todos sus datos.",
+          "inicio": "Inicio (mínimo 100 palabras). Recuperación de saberes y motivación.",
+          "desarrollo": "BLOQUE DE ACTIVIDADES PRÁCTICAS. Mínimo 400 palabras dedicadas EXCLUSIVAMENTE a las actividades. Generar EXACTAMENTE ${formData.cantActividades} actividades numeradas. CADA ACTIVIDAD debe tener: 1) NOMBRE, 2) OBJETIVO, 3) CONSIGNA LITERAL (ejercicios, problemas, textos), 4) TIEMPO ESTIMADO. Prohibido usar prosa narrativa o descripciones de lo que el docente hace.",
           "cierre": "Cierre con síntesis y consigna para la próxima clase.",
           "metacognicion": ["3 preguntas de reflexión"],
           "errores_intervenciones": ["3 errores comunes y cómo intervenirlos"],
@@ -70,16 +92,18 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
     ═══════════════════════════════════
     NORMAS DE CALIDAD Y ESTILO:
     ═══════════════════════════════════
-    1. ESPECIFICIDAD RADICAL: Prohibido usar frases como "El docente explicará", "Se harán ejercicios" o "Se debatirá". 
-       DEBES escribir el CONTENIDO EXACTO (problemas con números, fragmentos de texto, guías de preguntas completas).
-    2. DESARROLLO DE ACTIVIDADES: Cada actividad en el campo "desarrollo" debe ser una guía lista para usar. 
-       - Si es técnica: Incluye datos, componentes, valores.
-       - Si es teórica: Incluye fragmentos de texto o preguntas de análisis profundo.
-    3. EXTENSIÓN: No escatimes en el texto de las consignas. El docente debe poder copiar y pegar la actividad.
+    1. FOCO EN LA ACTIVIDAD: El apartado "desarrollo" NO es una descripción de la clase, es un BANCO DE ACTIVIDADES.
+       - Prohibido: "El docente explica y luego los alumnos hacen un ejercicio..."
+       - Obligatorio: "Actividad 1: [Consigna detallada con todos sus datos]. Actividad 2: [Problema complejo]..."
+    2. ESPECIFICIDAD TOTAL: Prohibido usar frases como "Se debatirán los contenidos" o "Se realizarán ejercicios de práctica". 
+       DEBES escribir el TEXTO EXACTO que el alumno tendrá en su hoja: problemas, cálculos, fragmentos de lectura, consignas de escritura.
+    3. DENSIDAD DE CONTENIDO: Cada actividad debe ser lo suficientemente extensa para que el alumno trabaje de forma autónoma.
     4. CITAS: Fundamentación con citas (Autor, Año). Bibliografía APA 7.
     5. CANTIDAD: Generar EXACTAMENTE ${formData.numClases} clases y ${formData.cantActividades} actividades por clase.
     6. WIZARD CONTEXT: Usa las respuestas del docente como guía prioritaria:
        ${wizardAnswers ? Object.entries(wizardAnswers).map(([id, answer]) => `- ${id}: ${answer}`).join('\n') : 'No se proveyeron respuestas adicionales.'}
+
+    ${searchContext}
 
     RESPONDE SOLO EL JSON PURO. Sin bloques markdown, sin texto adicional.
   `;
