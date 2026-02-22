@@ -373,7 +373,11 @@ const Dashboard = () => {
                                 }
 
                                 // Handle "clases" or similar arrays
+                                // Handle "clases" or similar arrays
                                 if (Array.isArray(value)) {
+                                    // Detect if it's a table (array of similar objects)
+                                    const isTable = value.length > 0 && typeof value[0] === 'object' && !Array.isArray(value[0]) && value[0] !== null;
+
                                     return (
                                         <Accordion
                                             key={key}
@@ -382,44 +386,89 @@ const Dashboard = () => {
                                             onClick={() => setEditingSection(editingSection === key ? null : key)}
                                         >
                                             <div className="space-y-4 pt-2">
-                                                {value.map((item, idx) => {
-                                                    if (typeof item === 'string') {
-                                                        return (
-                                                            <textarea
-                                                                key={idx}
-                                                                className="w-full p-3 text-xs border border-slate-100 rounded-xl bg-slate-50"
-                                                                value={item}
-                                                                onChange={(e) => {
-                                                                    const newList = [...value];
-                                                                    newList[idx] = e.target.value;
-                                                                    handleUpdatePlanning(key, newList);
-                                                                }}
-                                                            />
-                                                        );
-                                                    }
-                                                    // Handle complex objects in arrays (like class moments)
-                                                    return (
-                                                        <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-                                                            <h4 className="text-[9px] font-black text-forest-700 uppercase">Item {idx + 1}</h4>
-                                                            {Object.entries(item).map(([subKey, subVal]) => (
-                                                                typeof subVal === 'string' ? (
-                                                                    <div key={subKey} className="space-y-1">
-                                                                        <label className="text-[8px] font-bold text-slate-400 uppercase">{subKey}</label>
-                                                                        <textarea
-                                                                            className="w-full p-2 text-xs bg-white border border-slate-200 rounded-lg"
-                                                                            value={subVal}
-                                                                            onChange={(e) => {
-                                                                                const newList = [...value];
-                                                                                newList[idx] = { ...item, [subKey]: e.target.value };
-                                                                                handleUpdatePlanning(key, newList);
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                ) : null
-                                                            ))}
-                                                        </div>
-                                                    );
-                                                })}
+                                                {isTable ? (
+                                                    <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                                                        <table className="w-full text-[10px] text-left">
+                                                            <thead className="bg-slate-50 border-b border-slate-200">
+                                                                <tr>
+                                                                    {Object.keys(value[0]).map(col => (
+                                                                        <th key={col} className="px-3 py-2 font-black text-forest-700 uppercase">{col}</th>
+                                                                    ))}
+                                                                    <th className="px-3 py-2 w-10"></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-slate-100">
+                                                                {value.map((row, rIdx) => (
+                                                                    <tr key={rIdx} className="bg-white">
+                                                                        {Object.entries(row).map(([col, val], cIdx) => (
+                                                                            <td key={cIdx} className="px-2 py-1">
+                                                                                <textarea
+                                                                                    className="w-full p-1 border-none focus:ring-1 focus:ring-forest-500 rounded text-xs min-h-[40px] resize-y"
+                                                                                    value={val || ''}
+                                                                                    onChange={(e) => {
+                                                                                        const newList = [...value];
+                                                                                        newList[rIdx] = { ...row, [col]: e.target.value };
+                                                                                        handleUpdatePlanning(key, newList);
+                                                                                    }}
+                                                                                />
+                                                                            </td>
+                                                                        ))}
+                                                                        <td className="px-2 py-1 text-center">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    const newList = value.filter((_, i) => i !== rIdx);
+                                                                                    handleUpdatePlanning(key, newList);
+                                                                                }}
+                                                                                className="text-red-400 hover:text-red-600 p-1"
+                                                                            >
+                                                                                <X size={12} />
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                        <button
+                                                            onClick={() => {
+                                                                const newRow = {};
+                                                                Object.keys(value[0]).forEach(k => newRow[k] = '');
+                                                                handleUpdatePlanning(key, [...value, newRow]);
+                                                            }}
+                                                            className="w-full py-2 bg-slate-50 text-forest-600 text-[10px] font-bold hover:bg-forest-50 border-t border-slate-200 flex items-center justify-center gap-1"
+                                                        >
+                                                            <Plus size={12} /> AGREGAR FILA
+                                                        </button>
+                                                    </div>
+                                                ) : value.map((item, idx) => (
+                                                    <div key={idx} className="flex gap-2 group">
+                                                        <textarea
+                                                            className="flex-1 p-3 text-xs border border-slate-100 rounded-xl bg-slate-50 focus:bg-white transition-colors"
+                                                            value={item}
+                                                            onChange={(e) => {
+                                                                const newList = [...value];
+                                                                newList[idx] = e.target.value;
+                                                                handleUpdatePlanning(key, newList);
+                                                            }}
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                const newList = value.filter((_, i) => i !== idx);
+                                                                handleUpdatePlanning(key, newList);
+                                                            }}
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600"
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {!isTable && (
+                                                    <button
+                                                        onClick={() => handleUpdatePlanning(key, [...value, ""])}
+                                                        className="w-full py-2 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-[10px] font-bold hover:border-forest-300 hover:text-forest-600 transition-all flex items-center justify-center gap-1"
+                                                    >
+                                                        <Plus size={14} /> AGREGAR ELEMENTO
+                                                    </button>
+                                                )}
                                             </div>
                                         </Accordion>
                                     );

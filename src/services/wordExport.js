@@ -72,32 +72,65 @@ export const exportToWord = async (data) => {
         if (typeof value === 'string') {
             children.push(new Paragraph({ text: value, spacing: { after: 120 } }));
         } else if (Array.isArray(value)) {
-            value.forEach((item, idx) => {
-                if (typeof item === 'string') {
-                    children.push(
-                        new Paragraph({
-                            children: [new TextRun("• "), new TextRun(item)],
-                            indent: { left: 360 },
-                            spacing: { after: 60 },
-                        })
-                    );
-                } else if (typeof item === 'object' && item !== null) {
-                    // Complexity (like classes)
-                    children.push(new Paragraph({ text: `Item ${idx + 1}`, bold: true, spacing: { before: 100 } }));
-                    Object.entries(item).forEach(([subKey, subVal]) => {
+            if (value.length === 0) return;
+
+            // Detect if it's a table (array of similar objects)
+            const isTable = typeof value[0] === 'object' && !Array.isArray(value[0]) && value[0] !== null;
+
+            if (isTable) {
+                const colKeys = Object.keys(value[0]);
+
+                children.push(
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            // Header Row
+                            new TableRow({
+                                children: colKeys.map(col => new TableCell({
+                                    children: [new Paragraph({ text: col.toUpperCase(), bold: true, alignment: AlignmentType.CENTER })],
+                                    shading: { fill: "E6F3E6", type: ShadingType.CLEAR, color: "auto" },
+                                    verticalAlign: VerticalAlign.CENTER,
+                                })),
+                            }),
+                            // Data Rows
+                            ...value.map(row => new TableRow({
+                                children: colKeys.map(col => new TableCell({
+                                    children: [new Paragraph({ text: String(row[col] || ""), size: 18 })],
+                                    verticalAlign: VerticalAlign.CENTER,
+                                })),
+                            }))
+                        ],
+                    })
+                );
+                children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+            } else {
+                value.forEach((item, idx) => {
+                    if (typeof item === 'string') {
                         children.push(
                             new Paragraph({
-                                children: [
-                                    new TextRun({ text: `${subKey}: `, bold: true }),
-                                    new TextRun(String(subVal)),
-                                ],
-                                indent: { left: 480 },
-                                spacing: { after: 40 },
+                                children: [new TextRun("• "), new TextRun(item)],
+                                indent: { left: 360 },
+                                spacing: { after: 60 },
                             })
                         );
-                    });
-                }
-            });
+                    } else if (typeof item === 'object' && item !== null) {
+                        // Complexity (like classes/moments)
+                        children.push(new Paragraph({ text: `Item ${idx + 1}`, bold: true, spacing: { before: 100 } }));
+                        Object.entries(item).forEach(([subKey, subVal]) => {
+                            children.push(
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({ text: `${subKey}: `, bold: true }),
+                                        new TextRun(String(subVal)),
+                                    ],
+                                    indent: { left: 480 },
+                                    spacing: { after: 40 },
+                                })
+                            );
+                        });
+                    }
+                });
+            }
         } else if (typeof value === 'object' && value !== null) {
             Object.entries(value).forEach(([subKey, subVal]) => {
                 children.push(

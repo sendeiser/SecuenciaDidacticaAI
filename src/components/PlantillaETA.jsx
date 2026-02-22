@@ -183,6 +183,42 @@ const PlantillaETA = ({ data }) => {
         }
 
         if (Array.isArray(value)) {
+            if (value.length === 0) return null;
+
+            // Detect if it's a table (array of objects with similar keys)
+            const isTable = typeof value[0] === 'object' && !Array.isArray(value[0]) && value[0] !== null;
+
+            if (isTable) {
+                const colKeys = Object.keys(value[0]);
+                const colWidth = (100 / colKeys.length).toString() + '%';
+
+                return (
+                    <View key={key} style={styles.section}>
+                        {!isHeader && <Text style={styles.sectionHeading}>{key.toUpperCase()}</Text>}
+                        <View style={styles.table}>
+                            {/* Header Row */}
+                            <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                                {colKeys.map((col) => (
+                                    <View key={col} style={[styles.tableCol, { width: colWidth }]}>
+                                        <Text style={styles.tableCellHeader}>{col.toUpperCase()}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                            {/* Data Rows */}
+                            {value.map((row, rIdx) => (
+                                <View key={rIdx} style={styles.tableRow} wrap={false}>
+                                    {colKeys.map((col) => (
+                                        <View key={col} style={[styles.tableCol, { width: colWidth }]}>
+                                            <Text style={styles.tableCell}>{String(row[col] || '')}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                );
+            }
+
             return (
                 <View key={key} style={styles.section}>
                     {!isHeader && <Text style={styles.sectionHeading}>{key.toUpperCase()}</Text>}
@@ -195,7 +231,7 @@ const PlantillaETA = ({ data }) => {
                                 </View>
                             );
                         }
-                        // Handle objects in arrays (like classes)
+                        // Default for other complex items in array
                         return (
                             <View key={i} style={styles.classCard}>
                                 {Object.entries(item).map(([subKey, subVal]) => (

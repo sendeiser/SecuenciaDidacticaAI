@@ -83,11 +83,13 @@ export const generatePlanning = async (formData) => {
 
     Si HAY plantilla personalizada, el JSON resultante DEBE tener como llaves principales los nombres de las secciones detectadas en la plantilla. 
     Dentro de cada sección, genera el contenido pedagógico apropiado. Si la sección es el encabezado, complétalo con los datos proporcionados.
+    Si una sección en la plantilla original era una TABLA o GRILLA, refléjala como un ARRAY de OBJETOS (ej: [{"Col1": "...", "Col2": "..."}]).
 
     Recomendaciones Críticas:
     1. Redacta el contenido de forma extensiva y profesional.
     2. Usa Normas APA 7ma Edición para las referencias si aplica.
     3. Asegura solidez pedagógica adaptada al contexto.
+    4. RESPETA EL FORMATO DE TABLA si la sección lo requiere.
     
     RESPONDE SOLO EL JSON PURO.
   `;
@@ -158,8 +160,11 @@ export const analyzeDocumentStructure = async (docText) => {
          "Campo 2": "Valor encontrado..."
       },
       "estructura_clase": ["Etapa 1 de la clase/unidad", "Etapa 2"],
-      "nombre_plantilla": "Nombre descriptivo"
+      "nombre_plantilla": "Nombre descriptivo",
+      "secciones_tabla": ["Lista de secciones que deben ser tratadas como tablas o grillas"]
     }
+    
+    NOTA: Si detectas secciones que son tablas (ej: cronogramas, rúbricas de evaluación, redes de contenidos), inclúyelas en "secciones_tabla".
     `;
 
   const userPrompt = `Analiza la estructura de este documento:\n\n${docText.substring(0, 10000)}`;
