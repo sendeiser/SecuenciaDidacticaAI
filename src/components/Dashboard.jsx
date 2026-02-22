@@ -60,6 +60,42 @@ const Dashboard = () => {
         variedadActividades: 'Media'
     });
 
+    const [isWizardMode, setIsWizardMode] = useState(true);
+    const [currentStep, setCurrentStep] = useState(0);
+
+    const wizardSteps = [
+        {
+            title: "Institución",
+            question: "¿En qué institución trabajarás?",
+            fields: ['escuela', 'zona'],
+            icons: { escuela: <School size={16} />, zona: <MapPin size={16} /> }
+        },
+        {
+            title: "Identidad",
+            question: "¿Cuáles son tus datos profesionales?",
+            fields: ['docente', 'dni', 'email', 'telefono'],
+            icons: { docente: <User size={16} />, dni: <IdCard size={16} />, email: <Mail size={16} />, telefono: <Phone size={16} /> }
+        },
+        {
+            title: "Contexto",
+            question: "¿A qué curso y materia va dirigida?",
+            fields: ['ciclo', 'año', 'materia', 'anioLectivo'],
+            icons: { ciclo: <GraduationCap size={16} />, año: <GraduationCap size={16} />, materia: <ClipboardList size={16} />, anioLectivo: <Sparkles size={16} /> }
+        },
+        {
+            title: "Contenido",
+            question: "¿Qué temática vas a desarrollar?",
+            fields: ['tematica', 'titulo'],
+            icons: { tematica: <BookOpen size={16} />, titulo: <Sparkles size={16} /> }
+        },
+        {
+            title: "Estructura",
+            question: "¿Cómo será la estructura de la secuencia?",
+            fields: ['numClases', 'variedadActividades'],
+            icons: { numClases: <ClipboardList size={16} />, variedadActividades: <Palette size={16} /> }
+        }
+    ];
+
     const [loading, setLoading] = useState(false);
     const [planningData, setPlanningData] = useState(null);
     const [activeTab, setActiveTab] = useState('generator'); // 'generator' or 'editor'
@@ -240,6 +276,16 @@ const Dashboard = () => {
                                 </button>
                             </div>
 
+                            <div className="flex items-center justify-between px-2">
+                                <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Modo Asistido</span>
+                                <button
+                                    onClick={() => setIsWizardMode(!isWizardMode)}
+                                    className={`w-12 h-6 rounded-full p-1 transition-colors ${isWizardMode ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`}
+                                >
+                                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isWizardMode ? 'translate-x-6' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
+
                             {/* Template System (Only if Custom or to Upload) */}
                             {templateType === 'custom' && (
                                 <div className="p-5 bg-[var(--bg-secondary)] rounded-3xl border border-[var(--border-color)] shadow-sm space-y-4">
@@ -319,6 +365,89 @@ const Dashboard = () => {
                                                         {['Baja', 'Media', 'Alta'].map(v => <option key={v} value={v}>{v}</option>)}
                                                     </select>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : isWizardMode ? (
+                                    <div className="animate-slide-up space-y-6">
+                                        {/* Wizard Progress */}
+                                        <div className="flex gap-1.5 px-1">
+                                            {wizardSteps.map((_, idx) => (
+                                                <div key={idx} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${idx <= currentStep ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-tertiary)]'}`} />
+                                            ))}
+                                        </div>
+
+                                        {/* Current Step Content */}
+                                        <div className="p-6 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-3xl shadow-sm space-y-6">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-black text-[var(--accent-primary)] uppercase tracking-widest bg-[var(--accent-primary)]/10 px-2 py-0.5 rounded">PASO {currentStep + 1}</span>
+                                                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{wizardSteps[currentStep].title}</span>
+                                                </div>
+                                                <h2 className="text-sm font-bold text-[var(--text-primary)]">{wizardSteps[currentStep].question}</h2>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                {wizardSteps[currentStep].fields.map(field => (
+                                                    field === 'numClases' || field === 'variedadActividades' ? (
+                                                        <div key={field} className="space-y-1.5">
+                                                            <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">
+                                                                {field === 'numClases' ? 'N° de Clases' : 'Variedad de Actividades'}
+                                                            </label>
+                                                            <select
+                                                                name={field}
+                                                                value={formData[field]}
+                                                                onChange={handleChange}
+                                                                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-2xl text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none"
+                                                            >
+                                                                {field === 'numClases'
+                                                                    ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n}>{n} Clases</option>)
+                                                                    : ['Baja', 'Media', 'Alta'].map(v => <option key={v} value={v}>{v}</option>)
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                    ) : (
+                                                        <FormField
+                                                            key={field}
+                                                            label={field.charAt(0).toUpperCase() + field.slice(1)}
+                                                            name={field}
+                                                            icon={wizardSteps[currentStep].icons[field]}
+                                                            value={formData[field]}
+                                                            onChange={handleChange}
+                                                            placeholder={`Ingresa ${field}...`}
+                                                        />
+                                                    )
+                                                ))}
+                                            </div>
+
+                                            <div className="flex gap-3 pt-4">
+                                                {currentStep > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCurrentStep(prev => prev - 1)}
+                                                        className="flex-1 py-3 border border-[var(--border-color)] text-[var(--text-primary)] rounded-2xl font-bold text-[10px] uppercase hover:bg-[var(--bg-tertiary)] transition-colors"
+                                                    >
+                                                        Anterior
+                                                    </button>
+                                                )}
+                                                {currentStep < wizardSteps.length - 1 ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCurrentStep(prev => prev + 1)}
+                                                        className="flex-[2] py-3 bg-[var(--accent-primary)] text-white rounded-2xl font-bold text-[10px] uppercase shadow-lg shadow-[var(--accent-primary)]/20 hover:scale-[1.02] transition-transform"
+                                                    >
+                                                        Siguiente
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        type="submit"
+                                                        disabled={loading}
+                                                        className="flex-[2] py-3 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white rounded-2xl font-black text-[10px] uppercase shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all"
+                                                    >
+                                                        {loading ? <Loader2 className="animate-spin" /> : <Send size={14} />}
+                                                        Generar Secuencia
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
