@@ -74,6 +74,36 @@ const Dashboard = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    // Safely converts any value (object, array, etc.) to a plain string
+    const toSafeStr = (val) => {
+        if (!val) return '';
+        if (typeof val === 'string') return val;
+        if (Array.isArray(val)) return val.join('\n');
+        if (typeof val === 'object') {
+            return Object.entries(val)
+                .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`)
+                .join('\n\n');
+        }
+        return String(val);
+    };
+
+    // Sanitize all class text fields before storing (AI may return objects)
+    const sanitizePlanningData = (data) => {
+        if (!data) return data;
+        return {
+            ...data,
+            clases: (data.clases || []).map(clase => ({
+                ...clase,
+                inicio: toSafeStr(clase.inicio),
+                desarrollo: toSafeStr(clase.desarrollo),
+                cierre: toSafeStr(clase.cierre),
+                diferenciacion: toSafeStr(clase.diferenciacion),
+                metacognicion: toSafeStr(clase.metacognicion),
+                errores_intervenciones: toSafeStr(clase.errores_intervenciones),
+            }))
+        };
+    };
+
     const handleUpdatePlanning = (path, value) => {
         const newData = JSON.parse(JSON.stringify(planningData));
         const keys = path.split('.');
@@ -98,7 +128,7 @@ const Dashboard = () => {
         setShowWizard(false);
         try {
             const data = await generatePlanning(savedFormData, wizardData);
-            setPlanningData(data);
+            setPlanningData(sanitizePlanningData(data));
             setActiveTab('editor');
         } catch (err) {
             setError('Error al generar la secuencia. Verifica tu conexión y cuota de Groq.');

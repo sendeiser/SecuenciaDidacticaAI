@@ -167,6 +167,19 @@ const styles = StyleSheet.create({
     }
 });
 
+// Converts any AI field safely to a string (AI sometimes returns objects or arrays)
+const safeText = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) return val.join('\n');
+    if (typeof val === 'object') {
+        return Object.entries(val)
+            .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`)
+            .join('\n\n');
+    }
+    return String(val);
+};
+
 const PlantillaETA = ({ data }) => {
     if (!data) return null;
 
@@ -273,13 +286,13 @@ const PlantillaETA = ({ data }) => {
                                         <Image src={clase.imagen || clase.imagen_url} style={styles.classImage} />
                                     )}
 
-                                    <Text style={[styles.paragraph, { lineHeight: 1.7, fontSize: 9.5, color: '#000' }]}>{clase[sectionKey]}</Text>
+                                    <Text style={[styles.paragraph, { lineHeight: 1.7, fontSize: 9.5, color: '#000' }]}>{safeText(clase[sectionKey])}</Text>
 
                                     {sectionKey === 'desarrollo' && (
                                         <>
                                             <View style={{ marginTop: 5, borderTopWidth: 0.5, borderTopColor: '#f1f5f9', paddingTop: 5 }}>
                                                 <Text style={[styles.label, { fontSize: 8, color: '#64748b' }]}>Diferenciación:</Text>
-                                                <Text style={[styles.paragraph, { paddingLeft: 10, fontSize: 8, color: '#64748b' }]}>{clase.diferenciacion}</Text>
+                                                <Text style={[styles.paragraph, { paddingLeft: 10, fontSize: 8, color: '#64748b' }]}>{safeText(clase.diferenciacion)}</Text>
                                             </View>
 
                                             {/* Videos strictly in development for flow */}
