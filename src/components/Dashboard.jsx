@@ -66,6 +66,50 @@ const Dashboard = () => {
     const [showWizard, setShowWizard] = useState(false);
     const [savedFormData, setSavedFormData] = useState(null);
 
+    // 1. Initial Load from LocalStorage
+    useEffect(() => {
+        const savedForm = localStorage.getItem('sdauto_form_data');
+        const savedPlanning = localStorage.getItem('sdauto_planning_data');
+
+        if (savedForm) {
+            try {
+                setFormData(JSON.parse(savedForm));
+            } catch (e) {
+                console.error("Error parsing saved form data", e);
+            }
+        }
+
+        if (savedPlanning) {
+            try {
+                const parsedPlanning = JSON.parse(savedPlanning);
+                setPlanningData(parsedPlanning);
+                setActiveTab('editor'); // If there's saved data, show the editor
+            } catch (e) {
+                console.error("Error parsing saved planning data", e);
+            }
+        }
+    }, []);
+
+    // 2. Persistence Effect for Form Data
+    useEffect(() => {
+        localStorage.setItem('sdauto_form_data', JSON.stringify(formData));
+    }, [formData]);
+
+    // 3. Persistence Effect for Planning Data
+    useEffect(() => {
+        if (planningData) {
+            localStorage.setItem('sdauto_planning_data', JSON.stringify(planningData));
+        }
+    }, [planningData]);
+
+    const handleNewSequence = () => {
+        if (window.confirm('¿Estás seguro de que quieres empezar una nueva secuencia? Se borrarán todos los datos actuales.')) {
+            localStorage.removeItem('sdauto_form_data');
+            localStorage.removeItem('sdauto_planning_data');
+            window.location.reload(); // Quickest way to reset all states
+        }
+    };
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -244,11 +288,20 @@ const Dashboard = () => {
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <Sprout size={80} className="text-white" />
                     </div>
-                    <div className="flex items-center gap-3 mb-1 relative z-10">
-                        <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl ring-1 ring-white/20">
-                            <LayoutDashboard className="text-white w-5 h-5" />
+                    <div className="flex items-center justify-between mb-1 relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl ring-1 ring-white/20">
+                                <LayoutDashboard className="text-white w-5 h-5" />
+                            </div>
+                            <h1 className="text-lg font-bold text-white tracking-tight">Maestro de Secuencias</h1>
                         </div>
-                        <h1 className="text-lg font-bold text-white tracking-tight">Maestro de Secuencias</h1>
+                        <button
+                            onClick={handleNewSequence}
+                            title="Nueva Secuencia (Borrar todo)"
+                            className="bg-white/10 hover:bg-white/20 p-2 rounded-lg text-white/70 hover:text-white transition-all ring-1 ring-white/10"
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
                     </div>
 
                     {/* Tab Switcher */}
