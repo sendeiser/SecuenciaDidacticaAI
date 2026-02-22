@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     },
     topBorder: {
         borderTopWidth: 2,
-        borderTopColor: '#064e3b', // Dark emerald
+        borderTopColor: '#059669', // Emerald 600
         marginBottom: 15,
     },
     headerWrapper: {
@@ -77,28 +77,31 @@ const styles = StyleSheet.create({
     },
     table: {
         marginTop: 15,
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderStyle: 'solid',
-        borderColor: '#000',
+        borderColor: '#1e293b', // Darker border for fidelity
     },
     tableRow: {
         flexDirection: 'row',
         borderBottomWidth: 1,
-        borderBottomColor: '#000',
-        minHeight: 30,
+        borderBottomColor: '#334155',
+        minHeight: 25,
     },
     tableHeaderRow: {
-        backgroundColor: '#e6f3e6', // Soft green to keep original vibe but professional
+        backgroundColor: '#f1f5f9', // Slate 100
+        borderBottomWidth: 2,
+        borderBottomColor: '#0f172a',
     },
     tableCol: {
-        padding: 4,
+        padding: 6,
         borderRightWidth: 1,
-        borderRightColor: '#000',
+        borderRightColor: '#334155',
     },
     tableCellHeader: {
-        fontWeight: 'bold',
-        fontSize: 8,
+        fontWeight: 'extrabold',
+        fontSize: 8.5,
         textAlign: 'center',
+        color: '#0f172a',
     },
     tableCell: {
         fontSize: 7,
@@ -284,7 +287,7 @@ const PlantillaETA = ({ data }) => {
                 {otherEntries.map(([key, value]) => renderContent(key, value))}
 
                 <View style={styles.footerContainer}>
-                    <Text>Documento generado por Maestro de Planificaciones | Basado en el Trayecto de Actualización Matemática</Text>
+                    <Text>Documento generado por Maestro de las secuencias | Inteligencia Pedagógica Avanzada</Text>
                 </View>
             </Page>
         </Document>

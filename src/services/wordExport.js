@@ -88,8 +88,14 @@ export const exportToWord = async (data) => {
                             new TableRow({
                                 children: colKeys.map(col => new TableCell({
                                     children: [new Paragraph({ text: col.toUpperCase(), bold: true, alignment: AlignmentType.CENTER })],
-                                    shading: { fill: "E6F3E6", type: ShadingType.CLEAR, color: "auto" },
+                                    shading: { fill: "F1F5F9", type: ShadingType.CLEAR, color: "auto" },
                                     verticalAlign: VerticalAlign.CENTER,
+                                    borders: {
+                                        top: { style: BorderStyle.SINGLE, size: 2 },
+                                        bottom: { style: BorderStyle.DOUBLE, size: 2 },
+                                        left: { style: BorderStyle.SINGLE, size: 1 },
+                                        right: { style: BorderStyle.SINGLE, size: 1 },
+                                    }
                                 })),
                             }),
                             // Data Rows
@@ -97,6 +103,11 @@ export const exportToWord = async (data) => {
                                 children: colKeys.map(col => new TableCell({
                                     children: [new Paragraph({ text: String(row[col] || ""), size: 18 })],
                                     verticalAlign: VerticalAlign.CENTER,
+                                    borders: {
+                                        bottom: { style: BorderStyle.SINGLE, size: 1 },
+                                        left: { style: BorderStyle.SINGLE, size: 1 },
+                                        right: { style: BorderStyle.SINGLE, size: 1 },
+                                    }
                                 })),
                             }))
                         ],
@@ -148,7 +159,7 @@ export const exportToWord = async (data) => {
 
     children.push(
         new Paragraph({
-            text: "Documento generado por Maestro de Planificaciones",
+            text: "Documento generado por Maestro de las secuencias",
             alignment: AlignmentType.CENTER,
             spacing: { before: 600 },
             size: 14,
