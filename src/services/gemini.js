@@ -1,57 +1,9 @@
-const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const MODEL = "llama-3.3-70b-versatile";
-
-/**
- * Utility to extract and parse JSON even if surrounded by text.
- */
-const extractAndParseJSON = (str) => {
-  try {
-    // Try direct parse first
-    return JSON.parse(str);
-  } catch (e) {
-    // Try to find the first '{' and last '}'
-    const start = str.indexOf('{');
-    const end = str.lastIndexOf('}');
-
-    if (start !== -1 && end !== -1 && end > start) {
-      const jsonStr = str.substring(start, end + 1);
-      try {
-        return JSON.parse(jsonStr);
-      } catch (innerError) {
-        console.error("Failed to parse extracted JSON substring:", jsonStr);
-        throw innerError;
-      }
-    }
-    throw new Error("No valid JSON object found in response");
-  }
-};
-
-/**
- * Genera una planificación completa basada en los datos del formulario 
- * y opcionalmente en una plantilla personalizada.
- */
 export const generatePlanning = async (formData) => {
-  const customTemplateInfo = formData.template ? `
-    ESTRUCTURA PERSONALIZADA (OBLIGATORIA):
-    El usuario ha subido una plantilla base ("${formData.template.nombre_plantilla}"). DEBES seguir estrictamente esta estructura:
-    - Secciones Requeridas: ${formData.template.secciones.join(', ')}
-    - Momentos de Clase/Unidades: ${formData.template.estructura_clase.join(', ')}
-    
-    DATOS DEL ENCABEZADO PROPORCIONADOS:
-    ${Object.entries(formData.template.fields).map(([k, v]) => `- ${k}: ${v}`).join('\n    ')}
-    
-    INSTRUCCIÓN DE FORMATO:
-    Genera el contenido para cada una de las secciones mencionadas. El JSON de respuesta debe tener llaves (keys) que coincidan con los nombres de estas secciones de la forma más natural posible.
-  ` : '';
+  const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+  const MODEL = "llama-3.3-70b-versatile";
 
   const prompt = `
-    Actúa como un experto pedagogo. Tu tarea es generar un documento educativo completo basado en la siguiente información:
-    
-    TIPO DE DOCUMENTO: ${formData.template ? formData.template.tipo_documento : 'Secuencia Didáctica Estándar'}
-    
-    ${customTemplateInfo}
-    ${!formData.template ? `
-    DATOS BÁSICOS:
+    Actúa como un EXPERTO PEDAGOGO y PLANIFICADOR CURRICULAR para nivel secundario técnico, con más de 20 años de experiencia. Tu tarea es generar una "Secuencia Didáctica" COMPLETA, EXTENSA y ALTAMENTE DESARROLLADA basada en la siguiente información:
     - Institución: ${formData.escuela}
     - Zona: ${formData.zona}
     - Docente: ${formData.docente}
@@ -61,37 +13,91 @@ export const generatePlanning = async (formData) => {
     - Materia: ${formData.materia}
     - Año Lectivo: ${formData.anioLectivo}
     - Eje Temático / Contenidos: ${formData.tematica}
-    - Título: ${formData.titulo}
-    ` : ''}
-    - Parámetro de extensión (Clases/Unidades/Ejes): ${formData.numClases}
+    - Título de la Secuencia: ${formData.titulo}
+    - Cantidad de Clases a generar: ${formData.numClases}
+    - Enfoque Metodológico: ${formData.tipoActividades}
+    - Cantidad de actividades/ejercicios por clase: ${formData.cantActividades}
     - Variedad y Diversidad de la práctica: ${formData.variedadActividades}
     - OPCIONAL - Incluir sugerencias de YouTube: ${formData.incluirVideos ? 'SÍ' : 'NO'}
     - OPCIONAL - Incluir sugerencias de imágenes ilustrativas: ${formData.incluirImagenes ? 'SÍ' : 'NO'}
 
-    DEBES responder ÚNICAMENTE con un objeto JSON válido.
-    
-    Si NO hay plantilla personalizada, usa esta estructura estándar:
+    DEBES responder ÚNICAMENTE con un objeto JSON válido que siga esta jerarquía exacta:
     {
-      "tipo": "Secuencia Didáctica",
-      "encabezado": { "institucion": "...", "materia": "...", "docente": "...", "dni": "...", "email": "...", "telefono": "...", "año_lectivo": "...", "titulo": "..." },
-      "fundamentacion": "...",
-      "estructura": { "propositos": [], "saberes": [], "objetivos": [] },
-      "clases": [ { "nombre": "...", "inicio": "...", "desarrollo": "...", "cierre": "...", "metacognicion": "...", "recursos_audiovisuales": { "youtube": [] } } ],
-      "evaluacion": { "criterios": [], "rubrica": [], "instrumentos": [] },
-      "bibliografia": []
+      "encabezado": {
+        "institucion": "${formData.escuela}",
+        "zona": "${formData.zona}",
+        "docente": "${formData.docente}",
+        "dni": "${formData.dni}",
+        "email": "${formData.email}",
+        "telefono": "${formData.telefono}",
+        "ciclo": "${formData.ciclo}",
+        "año": "${formData.año}",
+        "anio_lectivo": "${formData.anioLectivo}",
+        "materia": "${formData.materia}",
+        "eje_tematico": "${formData.tematica}",
+        "titulo_secuencia": "${formData.titulo}"
+      },
+      "puntos_partida": [
+        "Lista de exactamente 5 puntos de partida pedagógicamente sólidos y específicos al eje temático"
+      ],
+      "fundamentacion": "Texto extenso (mínimo 200 palabras) y académicamente riguroso sobre la importancia de la secuencia. Debe incluir al menos 2 citas en texto (Apellido, Año) de autores pedagógicos reconocidos.",
+      "estructura": {
+        "propositos": ["Lista de 4 propósitos formativos amplios"],
+        "saberes": ["Lista de ejes, saberes y contenidos a desarrollar, incluyendo conceptos, procedimientos y actitudes"],
+        "objetivos": ["Lista de 5 objetivos específicos de aprendizaje, redactados con verbos de acción (Bloom)"]
+      },
+      "clases": [
+        {
+          "nombre": "Clase 1: Título Específico y Descriptivo",
+          "inicio": "PASO A PASO DETALLADO (mínimo 100 palabras): 1. El docente saluda... 2. Formula la siguiente pregunta disparadora al grupo: '...' 3. Registra las respuestas en el pizarrón en un mapa conceptual preliminar... 4. Distribuye la siguiente ficha de diagnóstico: FICHA DE SABERES PREVIOS - Responde con tus propias palabras: a) ¿Qué entendés por...? b) ¿Alguna vez viste...? c) ¿Cómo relacionarías...?",
+          "desarrollo": "DESARROLLO EXTENSO Y COMPLETO (mínimo 250 palabras) con EXACTAMENTE ${formData.cantActividades} ACTIVIDADES NUMERADAS. CADA ACTIVIDAD debe tener: ACTIVIDAD 1 - [Nombre de la actividad]: Descripción del objetivo de la actividad... CONSIGNA PARA EL ALUMNO: [Texto literal y completo del ejercicio con todos los datos, enunciados, fragmentos de texto, ecuaciones, o diagramas necesarios. Listo para ser fotocopiado]. ACTIVIDAD 2 - [Nombre]... y así sucesivamente.",
+          "cierre": "CIERRE ESTRUCTURADO (mínimo 80 palabras): Describe cómo el docente realiza una síntesis... Incluye la siguiente consigna de cierre: 'Para la próxima clase, investigá...' o 'Redactá en tu carpeta...'.",
+          "metacognicion": "Al menos 3 preguntas metacognitivas específicas: 1. ¿Qué fue lo más difícil de hoy y por qué? 2. ¿Cómo relacionás lo visto hoy con...? 3. ¿Qué estrategia usaste para resolver...?",
+          "errores_intervenciones": "Lista de exactamente 3 errores conceptuales frecuentes con su intervención docente específica. Ej: ERROR: Los alumnos confunden X con Y. INTERVENCIÓN: El docente presenta el siguiente contraejemplo...",
+          "diferenciacion": "Estrategia de diferenciación concreta para: a) Alumnos con nivel avanzado: Se les propone la siguiente actividad extensión... b) Alumnos con dificultades: Se simplifica el ejercicio de la siguiente manera...",
+          "recursos_audiovisuales": {
+            "youtube": [
+              { "titulo": "Título descriptivo del video", "url_sugerida": "https://www.youtube.com/results?search_query=..." }
+            ]
+          }
+        }
+      ],
+      "evaluacion": {
+        "criterios": ["Criterio 1 detallado...", "Criterio 2 detallado..."],
+        "rubrica": [
+          { "criterio": "Criterio 1", "inicial": "Descripción del nivel inicial (1-4)", "basico": "Descripción del nivel básico (5-6)", "satisfactorio": "Descripción del nivel satisfactorio (7-8)", "destacado": "Descripción del nivel destacado (9-10)" }
+        ],
+        "instrumentos": ["Instrumento 1 con descripción...", "Instrumento 2 con descripción..."]
+      },
+      "bibliografia": ["Apellido, N. (Año). Título del libro en cursiva. Editorial.", "Otro en formato APA 7..."]
     }
 
-    Si HAY plantilla personalizada, el JSON resultante DEBE tener como llaves principales los nombres de las secciones detectadas en la plantilla. 
-    Dentro de cada sección, genera el contenido pedagógico apropiado. Si la sección es el encabezado, complétalo con los datos proporcionados.
-    Si una sección en la plantilla original era una TABLA o GRILLA, refléjala como un ARRAY de OBJETOS (ej: [{"Col1": "...", "Col2": "..."}]).
+    ═══════════════════════════════════
+    REGLAS CRÍTICAS E INAPELABLES:
+    ═══════════════════════════════════
 
-    Recomendaciones Críticas:
-    1. Redacta el contenido de forma extensiva y profesional.
-    2. Usa Normas APA 7ma Edición para las referencias si aplica.
-    3. Asegura solidez pedagógica adaptada al contexto.
-    4. RESPETA EL FORMATO DE TABLA si la sección lo requiere.
-    
-    RESPONDE SOLO EL JSON PURO.
+    ❌ PROHIBICIONES ABSOLUTAS (si las incumplís, el resultado es inválido):
+    - PROHIBIDO escribir "El docente realizará actividades de..." → DEBES ESCRIBIR LA ACTIVIDAD COMPLETA.
+    - PROHIBIDO "Se trabajarán ejercicios de..." → DEBES PONER LOS EJERCICIOS LITERALES.
+    - PROHIBIDO "Se pedirá a los alumnos que..." → DESCRIBE EXACTAMENTE QUÉ HARÁN Y CON QUÉ.
+    - PROHIBIDO textos vagos o genéricos de menos de 3 oraciones en cualquier campo.
+
+    ✅ OBLIGACIONES:
+    1. EXTENSIÓN: Cada campo "desarrollo" debe tener MÍNIMO 250 PALABRAS.
+    2. ACTIVIDADES COMPLETAS: Cada actividad numerada debe incluir SU CONSIGNA LITERAL, COMPLETA, con todos los datos.
+       - Matemática: "Resuelve el siguiente sistema de ecuaciones usando el método de sustitución: 2x + 3y = 12 / x - y = 1"
+       - Lengua: "Lee el siguiente fragmento de 'El aleph' de Borges: '[párrafo de ejemplo]'. Luego responde: 1. Identificá el narrador y justificá. 2. ¿Qué recursos retóricos identificás?"
+       - Ciencias: "Analizá la siguiente tabla de datos: [tabla con 5 filas y 3 columnas de valores]. ¿Qué relación existe entre las variables X e Y?"
+       - Técnica/Tecnología: "Diseñá el diagrama de un circuito en serie con: 1 batería de 12V, 3 resistencias (R1=100Ω, R2=220Ω, R3=470Ω). Calcular: a) Resistencia total, b) Corriente del circuito."
+    3. ESTRUCTURA: Usa numeración 1., 2., 3. con doble salto de línea entre actividades.
+    4. CLASES: DEBES generar EXACTAMENTE ${formData.numClases} clases. No más, no menos.
+    5. ACTIVIDADES POR CLASE: EXACTAMENTE ${formData.cantActividades} actividades en el "desarrollo" de cada clase.
+    6. METODOLOGÍA: Predominantemente ${formData.tipoActividades}.
+    7. VARIEDAD (nivel ${formData.variedadActividades}): Combinar análisis de casos reales, problemas con datos concretos, comparaciones, producciones escritas, y trabajo en grupos.
+    8. CITAS APA: Insertar citas en el texto (Autor, Año) en la fundamentación. Bibliografía en formato APA 7 completo.
+    9. DIFERENCIACIÓN: Siempre incluir adaptación para alumnos avanzados Y para alumnos con dificultades.
+
+    RESPONDE SOLO EL JSON PURO. Sin explicaciones, sin bloques markdown, sin texto fuera del JSON.
   `;
 
   try {
@@ -106,15 +112,15 @@ export const generatePlanning = async (formData) => {
         messages: [
           {
             role: "system",
-            content: "Eres un experto pedagogo que genera documentos educativos en formato JSON. Tu respuesta debe ser EXCLUSIVAMENTE el objeto JSON, sin texto explicativo antes ni después."
+            content: "Eres un generador de secuencias didácticas que solo responde en formato JSON."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        temperature: 0.5,
-        max_tokens: 8000
+        temperature: 0.6,
+        response_format: { type: "json_object" }
       })
     });
 
@@ -125,85 +131,9 @@ export const generatePlanning = async (formData) => {
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-
-    try {
-      return extractAndParseJSON(content);
-    } catch (parseError) {
-      console.error("Final parse error in generatePlanning. Raw content:", content);
-      throw new Error("La IA generó una respuesta que no pudimos procesar. Intenta simplificar el pedido o reducir el número de clases.");
-    }
+    return JSON.parse(content);
   } catch (error) {
-    console.error("Error generating planning:", error);
-    throw error;
-  }
-};
-
-/**
- * Analiza el texto de un documento para extraer sus secciones y campos lógicos.
- */
-export const analyzeDocumentStructure = async (docText) => {
-  if (!docText || docText.trim().length === 0) {
-    throw new Error("El documento está vacío o no se pudo leer.");
-  }
-
-  const systemPrompt = `
-    Eres un analista experto en documentos pedagógicos. 
-    Tu tarea es extraer la ESTRUCTURA (secciones y campos) de un documento para usarlo como plantilla.
-    
-    RESPONDE EXCLUSIVAMENTE UN JSON con este formato:
-    {
-      "tipo_documento": "Ej: Planificación Anual, Proyecto Institucional, etc.",
-      "secciones": ["Nombre Seccion 1", "Nombre Seccion 2"],
-      "datos_encabezado": ["Campo de Encabezado 1", "Campo 2"],
-      "initial_data": {
-         "Campo de Encabezado 1": "Valor encontrado en el texto (si existe)",
-         "Campo 2": "Valor encontrado..."
-      },
-      "estructura_clase": ["Etapa 1 de la clase/unidad", "Etapa 2"],
-      "nombre_plantilla": "Nombre descriptivo",
-      "secciones_tabla": ["Lista de secciones que deben ser tratadas como tablas o grillas"]
-    }
-    
-    NOTA: Si detectas secciones que son tablas (ej: cronogramas, rúbricas de evaluación, redes de contenidos), inclúyelas en "secciones_tabla".
-    `;
-
-  const userPrompt = `Analiza la estructura de este documento:\n\n${docText.substring(0, 10000)}`;
-
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: systemPrompt + " IMPORTANTE: Tu respuesta debe ser un JSON válido." },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.1,
-        max_tokens: 4000,
-        response_format: { type: "json_object" }
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || "Error al analizar documento");
-    }
-
-    const result = await response.json();
-    const content = result.choices[0].message.content;
-
-    try {
-      return extractAndParseJSON(content);
-    } catch (parseError) {
-      console.error("Final parse error in analyzeDocumentStructure. Raw content:", content);
-      throw new Error("No se pudo analizar la estructura del documento. Asegúrate de que el texto sea legible.");
-    }
-  } catch (error) {
-    console.error("Error analyzing structure:", error);
+    console.error("Error generating generic planning:", error);
     throw error;
   }
 };
