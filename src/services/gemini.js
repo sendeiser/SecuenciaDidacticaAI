@@ -2,6 +2,31 @@ const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const MODEL = "llama-3.3-70b-versatile";
 
 /**
+ * Utility to extract and parse JSON even if surrounded by text.
+ */
+const extractAndParseJSON = (str) => {
+  try {
+    // Try direct parse first
+    return JSON.parse(str);
+  } catch (e) {
+    // Try to find the first '{' and last '}'
+    const start = str.indexOf('{');
+    const end = str.lastIndexOf('}');
+
+    if (start !== -1 && end !== -1 && end > start) {
+      const jsonStr = str.substring(start, end + 1);
+      try {
+        return JSON.parse(jsonStr);
+      } catch (innerError) {
+        console.error("Failed to parse extracted JSON substring:", jsonStr);
+        throw innerError;
+      }
+    }
+    throw new Error("No valid JSON object found in response");
+  }
+};
+
+/**
  * Genera una planificación completa basada en los datos del formulario 
  * y opcionalmente en una plantilla personalizada.
  */
@@ -97,16 +122,13 @@ export const generatePlanning = async (formData) => {
     }
 
     const data = await response.json();
-    let content = data.choices[0].message.content;
-
-    // Clean potential markdown blocks
-    content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+    const content = data.choices[0].message.content;
 
     try {
-      return JSON.parse(content);
+      return extractAndParseJSON(content);
     } catch (parseError) {
-      console.error("Failed to parse JSON content:", content);
-      throw new Error("La respuesta de la IA no es un JSON válido. Intenta de nuevo.");
+      console.error("Final parse error in generatePlanning. Raw content:", content);
+      throw new Error("La IA generó una respuesta que no pudimos procesar. Intenta simplificar el pedido o reducir el número de clases.");
     }
   } catch (error) {
     console.error("Error generating planning:", error);
@@ -166,16 +188,13 @@ export const analyzeDocumentStructure = async (docText) => {
     }
 
     const result = await response.json();
-    let content = result.choices[0].message.content;
-
-    // Clean potential markdown blocks
-    content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+    const content = result.choices[0].message.content;
 
     try {
-      return JSON.parse(content);
+      return extractAndParseJSON(content);
     } catch (parseError) {
-      console.error("Failed to parse structure JSON:", content);
-      throw new Error("No se pudo analizar la estructura del documento.");
+      console.error("Final parse error in analyzeDocumentStructure. Raw content:", content);
+      throw new Error("No se pudo analizar la estructura del documento. Asegúrate de que el texto sea legible.");
     }
   } catch (error) {
     console.error("Error analyzing structure:", error);
