@@ -178,25 +178,25 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row min-h-screen lg:h-screen bg-[#f1f5f9] font-sans selection:bg-forest-100 selection:text-forest-900">
+        <div className="flex flex-col lg:flex-row min-h-screen lg:h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans selection:bg-forest-100 selection:text-forest-900 transition-colors">
             {/* Sidebar: Generator or Editor */}
-            <aside className="w-full lg:w-[500px] lg:h-full bg-white shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)] z-20 flex flex-col overflow-hidden">
+            <aside className="w-full lg:w-[500px] lg:h-full bg-[var(--bg-secondary)] border-r border-[var(--border-color)] shadow-[var(--card-shadow)] z-20 flex flex-col overflow-hidden transition-colors">
                 {/* Header Section */}
-                <div className="p-6 pb-4 border-b border-slate-100 bg-forest-900 relative overflow-hidden shrink-0">
+                <div className="p-6 pb-4 border-b border-black/10 bg-[var(--accent-primary)] relative overflow-hidden shrink-0">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Sprout size={80} className="text-white" />
+                        <GraduationCap size={80} className="text-white" />
                     </div>
                     <div className="flex items-center gap-3 mb-1 relative z-10">
                         <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl ring-1 ring-white/20">
-                            <LayoutDashboard className="text-white w-5 h-5" />
+                            <Palette className="text-white w-5 h-5" />
                         </div>
-                        <h1 className="text-lg font-bold text-white tracking-tight">Maestro de Secuencias</h1>
+                        <h1 className="text-lg font-bold text-white tracking-tight uppercase">Maestro de Secuencias</h1>
                     </div>
 
-                    <div className="flex mt-6 bg-forest-950/40 p-1 rounded-xl relative z-10 ring-1 ring-white/5">
+                    <div className="flex mt-6 bg-black/20 p-1 rounded-xl relative z-10 ring-1 ring-white/5">
                         <button
                             onClick={() => setActiveTab('generator')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${activeTab === 'generator' ? 'bg-white text-forest-900 shadow-lg' : 'text-forest-300 hover:text-white'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${activeTab === 'generator' ? 'bg-white text-[var(--accent-primary)] shadow-lg' : 'text-white/60 hover:text-white'}`}
                         >
                             <ClipboardList className="w-3.5 h-3.5" />
                             Generador
@@ -204,7 +204,7 @@ const Dashboard = () => {
                         <button
                             onClick={() => planningData && setActiveTab('editor')}
                             disabled={!planningData}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${activeTab === 'editor' ? 'bg-white text-forest-900 shadow-lg' : 'text-forest-300 hover:text-white disabled:opacity-30'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${activeTab === 'editor' ? 'bg-white text-[var(--accent-primary)] shadow-lg' : 'text-white/60 hover:text-white disabled:opacity-30'}`}
                         >
                             <Edit3 className="w-3.5 h-3.5" />
                             Editor Real
@@ -217,12 +217,12 @@ const Dashboard = () => {
                     {activeTab === 'generator' ? (
                         <div className="space-y-6 animate-fade-in">
                             {/* Template Type Switcher */}
-                            <div className="flex bg-slate-100 p-1 rounded-2xl ring-1 ring-slate-200">
+                            <div className="flex bg-[var(--bg-tertiary)] p-1 rounded-2xl border border-[var(--border-color)]">
                                 <button
                                     onClick={() => setTemplateType('standard')}
                                     className={`flex-1 py-4 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${templateType === 'standard'
-                                        ? 'bg-forest-600 dark:bg-emerald-600 text-white shadow-lg scale-[1.02]'
-                                        : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700 hover:border-forest-200'
+                                        ? 'bg-[var(--accent-primary)] text-white shadow-lg scale-[1.02]'
+                                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                         }`}
                                 >
                                     <Sparkles size={16} />
@@ -230,22 +230,25 @@ const Dashboard = () => {
                                 </button>
                                 <button
                                     onClick={() => setTemplateType('custom')}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-[10px] font-black uppercase transition-all ${templateType === 'custom' ? 'bg-white text-forest-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`flex-1 py-4 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${templateType === 'custom'
+                                        ? 'bg-[var(--accent-primary)] text-white shadow-lg scale-[1.02]'
+                                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                                        }`}
                                 >
-                                    <FileText className="w-3 h-3" />
+                                    <FileText size={16} />
                                     Personalizada
                                 </button>
                             </div>
 
                             {/* Template System (Only if Custom or to Upload) */}
                             {templateType === 'custom' && (
-                                <div className="p-5 bg-gradient-to-br from-forest-50 to-white rounded-3xl border border-forest-100 shadow-sm space-y-4">
+                                <div className="p-5 bg-[var(--bg-secondary)] rounded-3xl border border-[var(--border-color)] shadow-sm space-y-4">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Sparkles className="text-forest-600 w-4 h-4" />
-                                        <h3 className="text-[10px] font-black text-forest-900 uppercase tracking-widest">Sistema de Plantillas</h3>
+                                        <Sparkles className="text-[var(--accent-primary)] w-4 h-4" />
+                                        <h3 className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">Sistema de Plantillas</h3>
                                     </div>
-                                    <p className="text-[10px] text-slate-500 leading-relaxed">Sube un documento base para que la IA aprenda su estructura.</p>
-                                    <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${analyzingDoc ? 'bg-slate-50 border-slate-200' : 'bg-white border-forest-200 hover:border-forest-500 hover:bg-forest-50/30'}`}>
+                                    <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">Sube un documento base para que la IA aprenda su estructura.</p>
+                                    <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${analyzingDoc ? 'bg-[var(--bg-tertiary)] border-[var(--border-color)]' : 'bg-[var(--bg-secondary)] border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/5'}`}>
                                         {analyzingDoc ? (
                                             <div className="flex flex-col items-center gap-2">
                                                 <Loader2 className="w-6 h-6 text-forest-600 animate-spin" />
@@ -260,14 +263,14 @@ const Dashboard = () => {
                                         <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleFileUpload} disabled={analyzingDoc} />
                                     </label>
                                     {customTemplate && (
-                                        <div className="p-4 bg-white rounded-2xl border border-forest-100 shadow-sm animate-slide-up">
+                                        <div className="p-4 bg-[var(--bg-tertiary)] rounded-2xl border border-[var(--border-color)] shadow-sm animate-slide-up">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-[11px] font-bold text-slate-700 truncate max-w-[150px]">{customTemplate.fileName}</span>
-                                                <button onClick={() => { setCustomTemplate(null); setTemplateType('standard'); }}><X size={14} className="text-slate-400 hover:text-red-500" /></button>
+                                                <span className="text-[11px] font-bold text-[var(--text-primary)] truncate max-w-[150px]">{customTemplate.fileName}</span>
+                                                <button onClick={() => { setCustomTemplate(null); setTemplateType('standard'); }}><X size={14} className="text-[var(--text-secondary)] hover:text-red-500" /></button>
                                             </div>
                                             <div className="flex gap-2">
-                                                <span className="text-[8px] font-black text-forest-500 uppercase px-2 py-0.5 bg-forest-50 rounded-md">Secciones: {customTemplate.secciones?.length}</span>
-                                                <span className="text-[8px] font-black text-blue-500 uppercase px-2 py-0.5 bg-blue-50 rounded-md">Campos: {customTemplate.datos_encabezado?.length}</span>
+                                                <span className="text-[8px] font-black text-[var(--accent-primary)] uppercase px-2 py-0.5 bg-[var(--accent-primary)]/10 rounded-md">Secciones: {customTemplate.secciones?.length}</span>
+                                                <span className="text-[8px] font-black text-blue-500 uppercase px-2 py-0.5 bg-blue-500/10 rounded-md">Campos: {customTemplate.datos_encabezado?.length}</span>
                                             </div>
                                         </div>
                                     )}
@@ -277,10 +280,10 @@ const Dashboard = () => {
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {templateType === 'custom' && customTemplate ? (
                                     <div className="space-y-6 animate-fade-in">
-                                        <div className="p-4 bg-forest-50/50 rounded-2xl border border-forest-100 space-y-4">
+                                        <div className="p-4 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] space-y-4">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <Info className="text-forest-600 w-3.5 h-3.5" />
-                                                <h3 className="text-[10px] font-black text-forest-900 uppercase tracking-widest">Datos de la Plantilla</h3>
+                                                <Info className="text-[var(--accent-primary)] w-3.5 h-3.5" />
+                                                <h3 className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">Datos de la Plantilla</h3>
                                             </div>
                                             <div className="grid grid-cols-1 gap-4">
                                                 {customTemplate.datos_encabezado.map((field, idx) => (
@@ -302,17 +305,17 @@ const Dashboard = () => {
 
                                         {/* Optional: Add common controls that AI might need regardless of header */}
                                         <div className="space-y-4">
-                                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configuración Adicional</h3>
+                                            <h3 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Configuración Adicional</h3>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-1.5">
-                                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">N° de Clases / Unidades</label>
-                                                    <select name="numClases" value={formData.numClases} onChange={handleChange} className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl text-xs">
+                                                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">N° de Clases / Unidades</label>
+                                                    <select name="numClases" value={formData.numClases} onChange={handleChange} className="w-full px-3 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] transition-all focus:border-[var(--accent-primary)] outline-none">
                                                         {[1, 2, 3, 4, 5, 10, 20].map(n => <option key={n} value={n}>{n} {n === 1 ? 'Unidad/Clase' : 'Unidades/Clases'}</option>)}
                                                     </select>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Variedad</label>
-                                                    <select name="variedadActividades" value={formData.variedadActividades} onChange={handleChange} className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl text-xs">
+                                                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Variedad</label>
+                                                    <select name="variedadActividades" value={formData.variedadActividades} onChange={handleChange} className="w-full px-3 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] transition-all focus:border-[var(--accent-primary)] outline-none">
                                                         {['Baja', 'Media', 'Alta'].map(v => <option key={v} value={v}>{v}</option>)}
                                                     </select>
                                                 </div>
@@ -325,8 +328,8 @@ const Dashboard = () => {
                                             <FormField label="Institución" name="escuela" icon={<School className="w-3.5 h-3.5" />} value={formData.escuela} onChange={handleChange} placeholder="Ej. Colegio Nacional" />
                                             <FormField label="Zona" name="zona" icon={<MapPin className="w-3.5 h-3.5" />} value={formData.zona} onChange={handleChange} placeholder="Ej. Zona V" />
                                         </div>
-                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
-                                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Datos del Docente</h3>
+                                        <div className="p-4 bg-[var(--bg-tertiary)] rounded-2xl border border-[var(--border-color)] space-y-4">
+                                            <h3 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Datos del Docente</h3>
                                             <FormField label="Nombre y Apellido" name="docente" icon={<User className="w-3.5 h-3.5" />} value={formData.docente} onChange={handleChange} placeholder="Nombre completo" />
                                             <div className="grid grid-cols-2 gap-4">
                                                 <FormField label="DNI" name="dni" icon={<IdCard className="w-3.5 h-3.5" />} value={formData.dni} onChange={handleChange} placeholder="8.888.888" />
@@ -336,7 +339,7 @@ const Dashboard = () => {
                                         </div>
 
                                         <div className="space-y-4">
-                                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detalles Académicos</h3>
+                                            <h3 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Detalles Académicos</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <FormField label="Ciclo" name="ciclo" icon={<GraduationCap className="w-3.5 h-3.5" />} value={formData.ciclo} onChange={handleChange} placeholder="Ej. Ciclo Básico" />
                                                 <FormField label="Año" name="año" icon={<GraduationCap className="w-3.5 h-3.5" />} value={formData.año} onChange={handleChange} placeholder="Ej. 1er Año" />
@@ -350,8 +353,8 @@ const Dashboard = () => {
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="space-y-1.5">
-                                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">N° de Clases</label>
-                                                    <select name="numClases" value={formData.numClases} onChange={handleChange} className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl text-xs">
+                                                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">N° de Clases</label>
+                                                    <select name="numClases" value={formData.numClases} onChange={handleChange} className="w-full px-3 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] transition-all focus:border-[var(--accent-primary)] outline-none">
                                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n}>{n} Clases</option>)}
                                                     </select>
                                                 </div>
@@ -360,7 +363,7 @@ const Dashboard = () => {
                                     </>
                                 )}
 
-                                <button type="submit" disabled={loading} className="w-full py-4 bg-gradient-to-r from-forest-600 to-forest-800 text-white rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-3">
+                                <button type="submit" disabled={loading} className="w-full py-4 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all active:scale-[0.98]">
                                     {loading ? <Loader2 className="animate-spin" /> : <Send size={18} />}
                                     {loading ? 'GENERANDO SECUENCIA...' : 'GENERAR SECUENCIA DIDÁCTICA'}
                                 </button>
@@ -426,7 +429,7 @@ const Dashboard = () => {
                                                                         {Object.entries(row).map(([col, val], cIdx) => (
                                                                             <td key={cIdx} className="px-2 py-1">
                                                                                 <textarea
-                                                                                    className="w-full p-1 border-none focus:ring-1 focus:ring-forest-500 rounded text-xs min-h-[40px] resize-y"
+                                                                                    className="w-full p-1 bg-transparent border-none focus:ring-1 focus:ring-[var(--accent-primary)] rounded text-xs text-[var(--text-primary)] min-h-[40px] resize-y"
                                                                                     value={val || ''}
                                                                                     onChange={(e) => {
                                                                                         const newList = [...value];
@@ -465,7 +468,7 @@ const Dashboard = () => {
                                                 ) : value.map((item, idx) => (
                                                     <div key={idx} className="flex gap-2 group">
                                                         <textarea
-                                                            className="flex-1 p-3 text-xs border border-slate-100 rounded-xl bg-slate-50 focus:bg-white transition-colors"
+                                                            className="flex-1 p-3 text-xs border border-[var(--border-color)] rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-primary)] focus:bg-[var(--bg-secondary)] transition-colors outline-none focus:border-[var(--accent-primary)]"
                                                             value={item}
                                                             onChange={(e) => {
                                                                 const newList = [...value];
@@ -517,13 +520,13 @@ const Dashboard = () => {
                     )}
                 </div>
 
-                <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+                <div className="p-6 border-t border-[var(--border-color)] bg-[var(--bg-tertiary)]">
                     {planningData && (
                         <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => exportToWord(planningData)} className="flex items-center justify-center gap-2 bg-blue-600 text-white text-[10px] font-bold py-3 rounded-xl shadow-lg">
+                            <button onClick={() => exportToWord(planningData)} className="flex items-center justify-center gap-2 bg-blue-600 dark:bg-blue-700 text-white text-[10px] font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
                                 <FileDown size={14} /> WORD
                             </button>
-                            <PDFDownloadLink document={<PlantillaETA data={planningData} />} fileName="Secuencia.pdf" className="flex items-center justify-center gap-2 bg-slate-800 text-white text-[10px] font-bold py-3 rounded-xl shadow-lg">
+                            <PDFDownloadLink document={<PlantillaETA data={planningData} />} fileName="Secuencia.pdf" className="flex items-center justify-center gap-2 bg-slate-800 dark:bg-slate-700 text-white text-[10px] font-bold py-3 rounded-xl shadow-lg hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors">
                                 <Download size={14} /> PDF
                             </PDFDownloadLink>
                         </div>
@@ -531,15 +534,15 @@ const Dashboard = () => {
                 </div>
             </aside>
 
-            <main className="flex-1 lg:h-full bg-slate-200 p-4 lg:p-6 min-h-[500px]">
+            <main className="flex-1 lg:h-full bg-[var(--bg-tertiary)] p-4 lg:p-6 min-h-[500px] transition-colors">
                 {planningData ? (
-                    <div className="w-full h-full bg-white rounded-3xl shadow-2xl overflow-hidden">
+                    <div className="w-full h-full bg-[var(--bg-secondary)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--border-color)] transition-colors">
                         <PDFViewer className="w-full h-full border-none"><PlantillaETA data={planningData} /></PDFViewer>
                     </div>
                 ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
-                        <FileText size={64} />
-                        <p className="text-sm font-bold uppercase tracking-widest text-slate-500">Esperando información...</p>
+                    <div className="h-full flex flex-col items-center justify-center text-[var(--text-secondary)] gap-4 animate-fade-in">
+                        <FileText size={64} className="opacity-20" />
+                        <p className="text-sm font-bold uppercase tracking-widest">Esperando información organizada...</p>
                     </div>
                 )}
             </main>
@@ -549,21 +552,29 @@ const Dashboard = () => {
 
 const FormField = ({ label, name, icon, value, onChange, placeholder }) => (
     <div className="space-y-1.5 w-full">
-        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</label>
+        <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{label}</label>
         <div className="relative group flex items-center">
-            {icon && <div className="absolute left-3 text-slate-400">{icon}</div>}
-            <input name={name} value={value} onChange={onChange} placeholder={placeholder} className={`w-full ${icon ? 'pl-9' : 'px-3'} py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm text-xs focus:ring-2 focus:ring-forest-500/10 focus:border-forest-600 outline-none`} />
+            {icon && <div className="absolute left-3 text-[var(--text-secondary)]">{icon}</div>}
+            <input
+                name={name}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                className={`w-full ${icon ? 'pl-9' : 'px-3'} py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl shadow-sm text-xs text-[var(--text-primary)] focus:ring-4 focus:ring-[var(--accent-primary)]/10 focus:border-[var(--accent-primary)] outline-none transition-all placeholder:text-[var(--text-secondary)]/50`}
+            />
         </div>
     </div>
 );
 
 const Accordion = ({ title, children, isOpen, onClick }) => (
-    <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-        <button onClick={onClick} className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{title}</span>
-            {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+    <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-sm transition-colors">
+        <button onClick={onClick} className="w-full flex items-center justify-between p-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors">
+            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{title}</span>
+            <div className="text-[var(--text-secondary)]">
+                {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </div>
         </button>
-        {isOpen && <div className="p-4 pt-0 border-t border-slate-50">{children}</div>}
+        {isOpen && <div className="p-4 pt-0 border-t border-[var(--border-color)] animate-fade-in">{children}</div>}
     </div>
 );
 
@@ -578,7 +589,7 @@ const ListEditor = ({ label, items, onUpdate }) => {
         <div className="space-y-2">
             <label className="text-[9px] font-bold text-slate-400 uppercase">{label}</label>
             {items.map((item, idx) => (
-                <textarea key={idx} className="w-full p-2 text-xs border border-slate-100 rounded-lg" value={item} onChange={(e) => handleItemChange(idx, e.target.value)} />
+                <textarea key={idx} className="w-full p-2 text-xs border border-[var(--border-color)] bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-lg outline-none focus:border-[var(--accent-primary)]" value={item} onChange={(e) => handleItemChange(idx, e.target.value)} />
             ))}
         </div>
     );

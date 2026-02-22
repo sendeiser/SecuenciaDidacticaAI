@@ -173,14 +173,11 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--text-secondary);
   border-radius: 10px;
+  opacity: 0.5;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.input-focus-effect {
-  @apply transition-all duration-300 border-slate-200 focus:border-forest-600 focus:ring-4 focus:ring-forest-100;
+  background: var(--accent-primary);
 }
