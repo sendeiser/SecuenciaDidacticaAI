@@ -20,9 +20,13 @@ export const generatePlanning = async (formData) => {
   ` : '';
 
   const prompt = `
-    Actúa como un experto pedagogo para nivel secundario. Tu tarea es generar un documento educativo completo (Planificación/Secuencia) basado en la siguiente información:
+    Actúa como un experto pedagogo. Tu tarea es generar un documento educativo completo basado en la siguiente información:
+    
+    TIPO DE DOCUMENTO: ${formData.template ? formData.template.tipo_documento : 'Secuencia Didáctica Estándar'}
+    
     ${customTemplateInfo}
     ${!formData.template ? `
+    DATOS BÁSICOS:
     - Institución: ${formData.escuela}
     - Zona: ${formData.zona}
     - Docente: ${formData.docente}
@@ -34,7 +38,7 @@ export const generatePlanning = async (formData) => {
     - Eje Temático / Contenidos: ${formData.tematica}
     - Título: ${formData.titulo}
     ` : ''}
-    - Cantidad de Clases/Unidades/Ejes a generar: ${formData.numClases}
+    - Parámetro de extensión (Clases/Unidades/Ejes): ${formData.numClases}
     - Variedad y Diversidad de la práctica: ${formData.variedadActividades}
     - OPCIONAL - Incluir sugerencias de YouTube: ${formData.incluirVideos ? 'SÍ' : 'NO'}
     - OPCIONAL - Incluir sugerencias de imágenes ilustrativas: ${formData.incluirImagenes ? 'SÍ' : 'NO'}
@@ -43,7 +47,8 @@ export const generatePlanning = async (formData) => {
     
     Si NO hay plantilla personalizada, usa esta estructura estándar:
     {
-      "encabezado": { "institucion": "...", "materia": "...", "docente": "...", ... },
+      "tipo": "Secuencia Didáctica",
+      "encabezado": { "institucion": "...", "materia": "...", "docente": "...", "dni": "...", "email": "...", "telefono": "...", "año_lectivo": "...", "titulo": "..." },
       "fundamentacion": "...",
       "estructura": { "propositos": [], "saberes": [], "objetivos": [] },
       "clases": [ { "nombre": "...", "inicio": "...", "desarrollo": "...", "cierre": "...", "metacognicion": "...", "recursos_audiovisuales": { "youtube": [] } } ],
@@ -51,12 +56,13 @@ export const generatePlanning = async (formData) => {
       "bibliografia": []
     }
 
-    Si HAY plantilla personalizada, adapta las llaves del JSON a las secciones detectadas, pero mantén un formato similar para el contenido pedagógico interno.
+    Si HAY plantilla personalizada, el JSON resultante DEBE tener como llaves principales los nombres de las secciones detectadas en la plantilla. 
+    Dentro de cada sección, genera el contenido pedagógico apropiado. Si la sección es el encabezado, complétalo con los datos proporcionados.
 
     Recomendaciones Críticas:
-    1. Redacta los ejercicios COMPLETOS y listos para usar.
-    2. Usa Normas APA 7ma Edición para la bibliografía.
-    3. Asegura solidez pedagógica y lenguaje académico.
+    1. Redacta el contenido de forma extensiva y profesional.
+    2. Usa Normas APA 7ma Edición para las referencias si aplica.
+    3. Asegura solidez pedagógica adaptada al contexto.
     
     RESPONDE SOLO EL JSON PURO.
   `;
@@ -112,8 +118,13 @@ export const analyzeDocumentStructure = async (docText) => {
     
     RESPONDE EXCLUSIVAMENTE UN JSON con este formato:
     {
+      "tipo_documento": "Ej: Planificación Anual, Proyecto Institucional, etc.",
       "secciones": ["Nombre Seccion 1", "Nombre Seccion 2"],
       "datos_encabezado": ["Campo de Encabezado 1", "Campo 2"],
+      "initial_data": {
+         "Campo de Encabezado 1": "Valor encontrado en el texto (si existe)",
+         "Campo 2": "Valor encontrado..."
+      },
       "estructura_clase": ["Etapa 1 de la clase/unidad", "Etapa 2"],
       "nombre_plantilla": "Nombre descriptivo"
     }

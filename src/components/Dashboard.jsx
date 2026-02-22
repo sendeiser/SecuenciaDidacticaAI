@@ -126,7 +126,7 @@ const Dashboard = () => {
                 ...structure,
                 fileName: file.name,
                 rawText: text,
-                fields: templateFields
+                fields: { ...templateFields, ...(structure.initial_data || {}) }
             });
             setTemplateType('custom');
             setError(`¡Plantilla "${structure.nombre_plantilla}" detectada con éxito!`);
@@ -345,39 +345,102 @@ const Dashboard = () => {
                         </div>
                     ) : (
                         <div className="animate-fade-in space-y-6">
-                            <Accordion title="Identificación" isOpen={editingSection === 'header'} onClick={() => setEditingSection(editingSection === 'header' ? null : 'header')}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                                    <FormField label="Institución" value={planningData.encabezado.escuela} onChange={(e) => handleUpdatePlanning('encabezado.escuela', e.target.value)} />
-                                    <FormField label="Docente" value={planningData.encabezado.docente} onChange={(e) => handleUpdatePlanning('encabezado.docente', e.target.value)} />
-                                </div>
-                            </Accordion>
+                            {planningData && Object.entries(planningData).map(([key, value]) => {
+                                // Skip "tipo" and internal metadata
+                                if (key === 'tipo') return null;
 
-                            <Accordion title="Fundamentación" isOpen={editingSection === 'fundamentacion'} onClick={() => setEditingSection(editingSection === 'fundamentacion' ? null : 'fundamentacion')}>
-                                <textarea className="w-full h-48 p-3 text-xs border border-slate-100 rounded-xl" value={planningData.fundamentacion} onChange={(e) => handleUpdatePlanning('fundamentacion', e.target.value)} />
-                            </Accordion>
+                                // Handle "encabezado" or similar objects (flat fields)
+                                if (typeof value === 'object' && !Array.isArray(value) && value !== null && key.toLowerCase().includes('encabezado')) {
+                                    return (
+                                        <Accordion
+                                            key={key}
+                                            title={key.toUpperCase()}
+                                            isOpen={editingSection === key}
+                                            onClick={() => setEditingSection(editingSection === key ? null : key)}
+                                        >
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                                {Object.entries(value).map(([fieldKey, fieldValue]) => (
+                                                    <FormField
+                                                        key={fieldKey}
+                                                        label={fieldKey}
+                                                        value={fieldValue || ''}
+                                                        onChange={(e) => handleUpdatePlanning(`${key}.${fieldKey}`, e.target.value)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </Accordion>
+                                    );
+                                }
 
-                            <Accordion title="Contenidos y Objetivos" isOpen={editingSection === 'structure'} onClick={() => setEditingSection(editingSection === 'structure' ? null : 'structure')}>
-                                <div className="space-y-4 pt-2">
-                                    <ListEditor label="Propósitos" items={planningData.estructura.propositos} onUpdate={(val) => handleUpdatePlanning('estructura.propositos', val)} />
-                                    <ListEditor label="Saberes" items={planningData.estructura.saberes} onUpdate={(val) => handleUpdatePlanning('estructura.saberes', val)} />
-                                    <ListEditor label="Objetivos" items={planningData.estructura.objetivos} onUpdate={(val) => handleUpdatePlanning('estructura.objetivos', val)} />
-                                </div>
-                            </Accordion>
+                                // Handle "clases" or similar arrays
+                                if (Array.isArray(value)) {
+                                    return (
+                                        <Accordion
+                                            key={key}
+                                            title={key.toUpperCase()}
+                                            isOpen={editingSection === key}
+                                            onClick={() => setEditingSection(editingSection === key ? null : key)}
+                                        >
+                                            <div className="space-y-4 pt-2">
+                                                {value.map((item, idx) => {
+                                                    if (typeof item === 'string') {
+                                                        return (
+                                                            <textarea
+                                                                key={idx}
+                                                                className="w-full p-3 text-xs border border-slate-100 rounded-xl bg-slate-50"
+                                                                value={item}
+                                                                onChange={(e) => {
+                                                                    const newList = [...value];
+                                                                    newList[idx] = e.target.value;
+                                                                    handleUpdatePlanning(key, newList);
+                                                                }}
+                                                            />
+                                                        );
+                                                    }
+                                                    // Handle complex objects in arrays (like class moments)
+                                                    return (
+                                                        <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                                                            <h4 className="text-[9px] font-black text-forest-700 uppercase">Item {idx + 1}</h4>
+                                                            {Object.entries(item).map(([subKey, subVal]) => (
+                                                                typeof subVal === 'string' ? (
+                                                                    <div key={subKey} className="space-y-1">
+                                                                        <label className="text-[8px] font-bold text-slate-400 uppercase">{subKey}</label>
+                                                                        <textarea
+                                                                            className="w-full p-2 text-xs bg-white border border-slate-200 rounded-lg"
+                                                                            value={subVal}
+                                                                            onChange={(e) => {
+                                                                                const newList = [...value];
+                                                                                newList[idx] = { ...item, [subKey]: e.target.value };
+                                                                                handleUpdatePlanning(key, newList);
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                ) : null
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </Accordion>
+                                    );
+                                }
 
-                            <Accordion title="Plan de Clases" isOpen={editingSection === 'classes'} onClick={() => setEditingSection(editingSection === 'classes' ? null : 'classes')}>
-                                <div className="space-y-6 pt-2">
-                                    {planningData.clases.map((clase, idx) => (
-                                        <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                            <h4 className="text-[10px] font-black text-forest-700 uppercase mb-3">Clase {idx + 1}</h4>
-                                            <textarea className="w-full h-32 p-3 text-xs bg-white border border-slate-200 rounded-xl mb-3" value={clase.desarrollo} onChange={(e) => {
-                                                const newClases = [...planningData.clases];
-                                                newClases[idx].desarrollo = e.target.value;
-                                                handleUpdatePlanning('clases', newClases);
-                                            }} />
-                                        </div>
-                                    ))}
-                                </div>
-                            </Accordion>
+                                // Default for large text blocks
+                                return (
+                                    <Accordion
+                                        key={key}
+                                        title={key.toUpperCase()}
+                                        isOpen={editingSection === key}
+                                        onClick={() => setEditingSection(editingSection === key ? null : key)}
+                                    >
+                                        <textarea
+                                            className="w-full h-48 p-3 text-xs border border-slate-100 rounded-xl"
+                                            value={typeof value === 'string' ? value : JSON.stringify(value)}
+                                            onChange={(e) => handleUpdatePlanning(key, e.target.value)}
+                                        />
+                                    </Accordion>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
