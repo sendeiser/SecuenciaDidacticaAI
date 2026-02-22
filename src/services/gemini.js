@@ -24,7 +24,7 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
     {
       "encabezado": {
         "institucion": "${formData.escuela}",
-        "zona": "${formData.zona}",
+        "zona": "${formData.zona || ''}",
         "docente": "${formData.docente}",
         "dni": "${formData.dni}",
         "email": "${formData.email}",
@@ -37,78 +37,51 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
         "titulo_secuencia": "${formData.titulo}"
       },
       "puntos_partida": [
-        "Lista de exactamente 5 puntos de partida pedagógicamente sólidos y específicos al eje temático"
+        "Lista de 5 puntos de partida específicos al eje temático"
       ],
-      "fundamentacion": "Texto extenso (mínimo 200 palabras) y académicamente riguroso sobre la importancia de la secuencia. Debe incluir al menos 2 citas en texto (Apellido, Año) de autores pedagógicos reconocidos.",
+      "fundamentacion": "Texto extenso (mínimo 200 palabras) y riguroso. Incluir 2 citas (Autor, Año).",
       "estructura": {
-        "propositos": ["Lista de 4 propósitos formativos amplios"],
-        "saberes": ["Lista de ejes, saberes y contenidos a desarrollar, incluyendo conceptos, procedimientos y actitudes"],
-        "objetivos": ["Lista de 5 objetivos específicos de aprendizaje, redactados con verbos de acción (Bloom)"]
+        "propositos": ["4 propósitos formativos"],
+        "saberes": ["Contenidos conceptuales, procedimentales y aptitudinales"],
+        "objetivos": ["5 objetivos específicos con verbos de acción"]
       },
       "clases": [
         {
-          "nombre": "Clase 1: Título Específico y Descriptivo",
-          "inicio": "PASO A PASO DETALLADO (mínimo 100 palabras): 1. El docente saluda... 2. Formula la siguiente pregunta disparadora al grupo: '...' 3. Registra las respuestas en el pizarrón en un mapa conceptual preliminar... 4. Distribuye la siguiente ficha de diagnóstico: FICHA DE SABERES PREVIOS - Responde con tus propias palabras: a) ¿Qué entendés por...? b) ¿Alguna vez viste...? c) ¿Cómo relacionarías...?",
-          "desarrollo": "DESARROLLO EXTENSO Y COMPLETO (mínimo 250 palabras) con EXACTAMENTE ${formData.cantActividades} ACTIVIDADES NUMERADAS. CADA ACTIVIDAD debe tener: ACTIVIDAD 1 - [Nombre de la actividad]: Descripción del objetivo de la actividad... CONSIGNA PARA EL ALUMNO: [Texto literal y completo del ejercicio con todos los datos, enunciados, fragmentos de texto, ecuaciones, o diagramas necesarios. Listo para ser fotocopiado]. ACTIVIDAD 2 - [Nombre]... y así sucesivamente.",
-          "cierre": "CIERRE ESTRUCTURADO (mínimo 80 palabras): Describe cómo el docente realiza una síntesis... Incluye la siguiente consigna de cierre: 'Para la próxima clase, investigá...' o 'Redactá en tu carpeta...'.",
-          "metacognicion": "Al menos 3 preguntas metacognitivas específicas: 1. ¿Qué fue lo más difícil de hoy y por qué? 2. ¿Cómo relacionás lo visto hoy con...? 3. ¿Qué estrategia usaste para resolver...?",
-          "errores_intervenciones": "Lista de exactamente 3 errores conceptuales frecuentes con su intervención docente específica. Ej: ERROR: Los alumnos confunden X con Y. INTERVENCIÓN: El docente presenta el siguiente contraejemplo...",
-          "diferenciacion": "Estrategia de diferenciación concreta para: a) Alumnos con nivel avanzado: Se les propone la siguiente actividad extensión... b) Alumnos con dificultades: Se simplifica el ejercicio de la siguiente manera...",
+          "nombre": "Título de la Clase",
+          "inicio": "Inicio detallado (mínimo 100 palabras). Incluir preguntas disparadoras.",
+          "desarrollo": "Desarrollo con EXACTAMENTE ${formData.cantActividades} ACTIVIDADES NUMERADAS. Mínimo 250-300 palabras finales por cada clase. CADA ACTIVIDAD debe incluir el TEXTO LITERAL de la consigna y todos sus datos.",
+          "cierre": "Cierre con síntesis y consigna para la próxima clase.",
+          "metacognicion": ["3 preguntas de reflexión"],
+          "errores_intervenciones": ["3 errores comunes y cómo intervenirlos"],
+          "diferenciacion": "Estrategia para niveles avanzados y alumnos con dificultades.",
           "recursos_audiovisuales": {
-            "youtube": [
-              { "titulo": "Título descriptivo del video", "url_sugerida": "https://www.youtube.com/results?search_query=..." }
-            ]
+            "youtube": [{ "titulo": "...", "url_sugerida": "..." }]
           }
         }
       ],
       "evaluacion": {
-        "criterios": ["Criterio 1 detallado...", "Criterio 2 detallado..."],
-        "rubrica": [
-          { "criterio": "Criterio 1", "inicial": "Descripción del nivel inicial (1-4)", "basico": "Descripción del nivel básico (5-6)", "satisfactorio": "Descripción del nivel satisfactorio (7-8)", "destacado": "Descripción del nivel destacado (9-10)" }
-        ],
-        "instrumentos": ["Instrumento 1 con descripción...", "Instrumento 2 con descripción..."]
+        "criterios": ["Lista de criterios..."],
+        "rubrica": [{ "criterio": "...", "inicial": "...", "basico": "...", "satisfactorio": "...", "destacado": "..." }],
+        "instrumentos": ["Instrumentos de evaluación..."]
       },
-      "bibliografia": ["Apellido, N. (Año). Título del libro en cursiva. Editorial.", "Otro en formato APA 7..."]
+      "bibliografia": ["Lista en formato APA 7"]
     }
 
     ═══════════════════════════════════
-    REGLAS CRÍTICAS E INAPELABLES:
+    NORMAS DE CALIDAD Y ESTILO:
     ═══════════════════════════════════
+    1. ESPECIFICIDAD RADICAL: Prohibido usar frases como "El docente explicará", "Se harán ejercicios" o "Se debatirá". 
+       DEBES escribir el CONTENIDO EXACTO (problemas con números, fragmentos de texto, guías de preguntas completas).
+    2. DESARROLLO DE ACTIVIDADES: Cada actividad en el campo "desarrollo" debe ser una guía lista para usar. 
+       - Si es técnica: Incluye datos, componentes, valores.
+       - Si es teórica: Incluye fragmentos de texto o preguntas de análisis profundo.
+    3. EXTENSIÓN: No escatimes en el texto de las consignas. El docente debe poder copiar y pegar la actividad.
+    4. CITAS: Fundamentación con citas (Autor, Año). Bibliografía APA 7.
+    5. CANTIDAD: Generar EXACTAMENTE ${formData.numClases} clases y ${formData.cantActividades} actividades por clase.
+    6. WIZARD CONTEXT: Usa las respuestas del docente como guía prioritaria:
+       ${wizardAnswers ? Object.entries(wizardAnswers).map(([id, answer]) => `- ${id}: ${answer}`).join('\n') : 'No se proveyeron respuestas adicionales.'}
 
-    ❌ PROHIBICIONES ABSOLUTAS (si las incumplís, el resultado es inválido):
-    - PROHIBIDO escribir "El docente realizará actividades de..." → DEBES ESCRIBIR LA ACTIVIDAD COMPLETA.
-    - PROHIBIDO "Se trabajarán ejercicios de..." → DEBES PONER LOS EJERCICIOS LITERALES.
-    - PROHIBIDO "Se pedirá a los alumnos que..." → DESCRIBE EXACTAMENTE QUÉ HARÁN Y CON QUÉ.
-    - PROHIBIDO textos vagos o genéricos de menos de 3 oraciones en cualquier campo.
-
-    ✅ OBLIGACIONES:
-    1. EXTENSIÓN: Cada campo "desarrollo" debe tener MÍNIMO 400 PALABRAS.
-    2. ACTIVIDADES COMPLETAS: Cada actividad numerada debe incluir SU CONSIGNA LITERAL, COMPLETA, con todos los datos.
-       - Matemática: "Resuelve el siguiente sistema de ecuaciones usando el método de sustitución: 2x + 3y = 12 / x - y = 1"
-       - Lengua: "Lee el siguiente fragmento de 'El aleph' de Borges: '[párrafo de ejemplo]'. Luego responde: 1. Identificá el narrador y justificá. 2. ¿Qué recursos retóricos identificás?"
-       - Ciencias: "Analizá la siguiente tabla de datos: [tabla con 5 filas y 3 columnas de valores]. ¿Qué relación existe entre las variables X e Y?"
-       - Técnica/Tecnología: "Diseñá el diagrama de un circuito en serie con: 1 batería de 12V, 3 resistencias (R1=100Ω, R2=220Ω, R3=470Ω). Calcular: a) Resistencia total, b) Corriente del circuito."
-    3. ESTRUCTURA: Usa numeración 1., 2., 3. con doble salto de línea entre actividades.
-    4. CLASES: DEBES generar EXACTAMENTE ${formData.numClases} clases. No más, no menos.
-    5. ACTIVIDADES POR CLASE: EXACTAMENTE ${formData.cantActividades} actividades en el "desarrollo" de cada clase.
-    6. METODOLOGÍA: Predominantemente ${formData.tipoActividades}.
-    7. VARIEDAD (nivel ${formData.variedadActividades}): Combinar análisis de casos reales, problemas con datos concretos, comparaciones, producciones escritas, y trabajo en grupos.
-    8. CITAS APA: Insertar citas en el texto (Autor, Año) en la fundamentación. Bibliografía en formato APA 7 completo.
-    9. DIFERENCIACIÓN: Siempre incluir adaptación para alumnos avanzados Y para alumnos con dificultades.
-
-    PROHIBICIÓN ABSOLUTA: No uses frases como "El docente explicará...", "Se realizarán ejercicios...", "Se debatirá...". 
-    REQUISITO OBLIGATORIO: Debes escribir el TEXTO EXACTO que el alumno leerá. Si es un video, describe qué pasa en el minuto X. Si es un problema, escribe los números y datos exactos.
-
-    RESPONDE SOLO EL JSON PURO. Sin explicaciones, sin bloques markdown, sin texto fuera del JSON.
-
-    ${wizardAnswers ? `
-    ═══════════════════════════════════
-    CONTEXTO ESPECÍFICO DEL DOCENTE (Respuestas al Wizard):
-    ═══════════════════════════════════
-    ${Object.entries(wizardAnswers).map(([id, answer]) => `- Pregunta ${id}: ${answer}`).join('\n')}
-    
-    ESTAS RESPUESTAS SON TU GUÍA PRINCIPAL. Si el docente menciona un problema específico o una dificultad, la secuencia DEBE resolver eso directamente.
-    ` : ''}
+    RESPONDE SOLO EL JSON PURO. Sin bloques markdown, sin texto adicional.
   `;
 
   try {
