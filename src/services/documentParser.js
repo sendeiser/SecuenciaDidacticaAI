@@ -2,7 +2,9 @@ import * as mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure PDF.js worker using a more stable CDN approach
+const PDFJS_VERSION = '3.11.174';
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
 
 /**
  * Extracts text from a .docx file using mammoth.
@@ -40,8 +42,8 @@ export const parsePdf = async (file) => {
 
         return fullText;
     } catch (error) {
-        console.error("Error parsing PDF:", error);
-        throw new Error("No se pudo leer el archivo PDF");
+        console.error("DEBUG - PDF Parsing Details:", error);
+        throw new Error(`Error en PDF: ${error.message || 'No se pudo leer'}`);
     }
 };
 

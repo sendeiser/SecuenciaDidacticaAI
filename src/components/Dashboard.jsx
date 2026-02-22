@@ -158,9 +158,9 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="flex h-screen bg-[#f1f5f9] font-sans selection:bg-forest-100 selection:text-forest-900">
+        <div className="flex flex-col lg:flex-row min-h-screen lg:h-screen bg-[#f1f5f9] font-sans selection:bg-forest-100 selection:text-forest-900">
             {/* Sidebar: Generator or Editor */}
-            <aside className="w-[500px] h-full bg-white shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)] z-20 flex flex-col overflow-hidden">
+            <aside className="w-full lg:w-[500px] lg:h-full bg-white shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)] z-20 flex flex-col overflow-hidden">
                 {/* Header Section */}
                 <div className="p-6 pb-4 border-b border-slate-100 bg-forest-900 relative overflow-hidden shrink-0">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -298,7 +298,7 @@ const Dashboard = () => {
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <FormField label="Institución" name="escuela" icon={<School className="w-3.5 h-3.5" />} value={formData.escuela} onChange={handleChange} placeholder="Ej. Colegio Nacional" />
                                             <FormField label="Zona" name="zona" icon={<MapPin className="w-3.5 h-3.5" />} value={formData.zona} onChange={handleChange} placeholder="Ej. Zona V" />
                                         </div>
@@ -314,18 +314,18 @@ const Dashboard = () => {
 
                                         <div className="space-y-4">
                                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detalles Académicos</h3>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <FormField label="Ciclo" name="ciclo" icon={<GraduationCap className="w-3.5 h-3.5" />} value={formData.ciclo} onChange={handleChange} placeholder="Ej. Ciclo Básico" />
                                                 <FormField label="Año" name="año" icon={<GraduationCap className="w-3.5 h-3.5" />} value={formData.año} onChange={handleChange} placeholder="Ej. 1er Año" />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <FormField label="Materia" name="materia" icon={<ClipboardList className="w-3.5 h-3.5" />} value={formData.materia} onChange={handleChange} placeholder="Ej. Física" />
                                                 <FormField label="Año Lectivo" name="anioLectivo" icon={<Sparkles className="w-3.5 h-3.5" />} value={formData.anioLectivo} onChange={handleChange} placeholder="Ej. 2024" />
                                             </div>
                                             <FormField label="Eje Temático" name="tematica" icon={<BookOpen className="w-3.5 h-3.5" />} value={formData.tematica} onChange={handleChange} />
                                             <FormField label="Título" name="titulo" icon={<Sparkles className="w-3.5 h-3.5" />} value={formData.titulo} onChange={handleChange} />
 
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="space-y-1.5">
                                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">N° de Clases</label>
                                                     <select name="numClases" value={formData.numClases} onChange={handleChange} className="w-full px-3 py-2.5 bg-white border border-slate-100 rounded-xl text-xs">
@@ -346,7 +346,7 @@ const Dashboard = () => {
                     ) : (
                         <div className="animate-fade-in space-y-6">
                             <Accordion title="Identificación" isOpen={editingSection === 'header'} onClick={() => setEditingSection(editingSection === 'header' ? null : 'header')}>
-                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                     <FormField label="Institución" value={planningData.encabezado.escuela} onChange={(e) => handleUpdatePlanning('encabezado.escuela', e.target.value)} />
                                     <FormField label="Docente" value={planningData.encabezado.docente} onChange={(e) => handleUpdatePlanning('encabezado.docente', e.target.value)} />
                                 </div>
@@ -396,7 +396,7 @@ const Dashboard = () => {
                 </div>
             </aside>
 
-            <main className="flex-1 bg-slate-200 p-6">
+            <main className="flex-1 lg:h-full bg-slate-200 p-4 lg:p-6 min-h-[500px]">
                 {planningData ? (
                     <div className="w-full h-full bg-white rounded-3xl shadow-2xl overflow-hidden">
                         <PDFViewer className="w-full h-full border-none"><PlantillaETA data={planningData} /></PDFViewer>
