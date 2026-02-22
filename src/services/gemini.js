@@ -97,7 +97,17 @@ export const generatePlanning = async (formData) => {
     }
 
     const data = await response.json();
-    return JSON.parse(data.choices[0].message.content);
+    let content = data.choices[0].message.content;
+
+    // Clean potential markdown blocks
+    content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    try {
+      return JSON.parse(content);
+    } catch (parseError) {
+      console.error("Failed to parse JSON content:", content);
+      throw new Error("La respuesta de la IA no es un JSON válido. Intenta de nuevo.");
+    }
   } catch (error) {
     console.error("Error generating planning:", error);
     throw error;
@@ -156,7 +166,17 @@ export const analyzeDocumentStructure = async (docText) => {
     }
 
     const result = await response.json();
-    return JSON.parse(result.choices[0].message.content);
+    let content = result.choices[0].message.content;
+
+    // Clean potential markdown blocks
+    content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    try {
+      return JSON.parse(content);
+    } catch (parseError) {
+      console.error("Failed to parse structure JSON:", content);
+      throw new Error("No se pudo analizar la estructura del documento.");
+    }
   } catch (error) {
     console.error("Error analyzing structure:", error);
     throw error;
