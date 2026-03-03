@@ -1,9 +1,11 @@
+import { processAIStream } from './streaming';
 import { searchEducationalResources } from './tavily';
 
-export const generatePlanning = async (formData, wizardAnswers = null) => {
-  const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-  const MODEL = "llama-3.3-70b-versatile";
+const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const MODEL_PREMIUM = "llama-3.3-70b-versatile";
+const MODEL_ECONOMY = "llama-3.1-8b-instant";
 
+export const generatePlanning = async (formData, wizardAnswers = null, onProgress = null) => {
   // 1. Pre-generation: Search for real educational resources (Argentina)
   let searchContext = "";
   try {
@@ -31,6 +33,8 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
     - DNI: ${formData.dni}
     - Email: ${formData.email}
     - Teléfono: ${formData.telefono}
+    - Ciclo: ${formData.ciclo}
+    - Año: ${formData.año}
     - Materia: ${formData.materia}
     - Año Lectivo: ${formData.anioLectivo}
     - Eje Temático / Contenidos: ${formData.tematica}
@@ -42,118 +46,137 @@ export const generatePlanning = async (formData, wizardAnswers = null) => {
     - OPCIONAL - Incluir sugerencias de YouTube: ${formData.incluirVideos ? 'SÍ' : 'NO'}
     - OPCIONAL - Incluir sugerencias de imágenes ilustrativas: ${formData.incluirImagenes ? 'SÍ' : 'NO'}
 
-    DEBES responder ÚNICAMENTE con un objeto JSON válido que siga esta jerarquía exacta:
+    DEBES responder ÚNICAMENTE con un objeto JSON válido que siga esta estructura exacta:
     {
       "encabezado": {
-        "institucion": "${formData.escuela}",
-        "zona": "${formData.zona || ''}",
-        "docente": "${formData.docente}",
-        "dni": "${formData.dni}",
-        "email": "${formData.email}",
-        "telefono": "${formData.telefono}",
-        "ciclo": "${formData.ciclo}",
-        "año": "${formData.año}",
-        "anio_lectivo": "${formData.anioLectivo}",
-        "materia": "${formData.materia}",
-        "eje_tematico": "${formData.tematica}",
-        "titulo_secuencia": "${formData.titulo}"
+        "institucion": "nombre",
+        "zona": "zona",
+        "docente": "nombre",
+        "dni": "dni",
+        "email": "email",
+        "telefono": "tel",
+        "ciclo": "ciclo",
+        "año": "año",
+        "anio_lectivo": "202x",
+        "materia": "materia",
+        "eje_tematico": "tema",
+        "titulo_secuencia": "título"
       },
-      "puntos_partida": [
-        "Lista de 5 puntos de partida específicos al eje temático"
-      ],
-      "fundamentacion": "Texto extenso (mínimo 200 palabras) y riguroso. Incluir 2 citas (Autor, Año).",
+      "puntos_partida": ["punto 1", "punto 2", "punto 3", "punto 4", "punto 5"],
+      "fundamentacion": "Texto extenso con citas...",
       "estructura": {
-        "propositos": ["4 propósitos formativos"],
-        "saberes": ["Contenidos conceptuales, procedimentales y aptitudinales"],
-        "objetivos": ["5 objetivos específicos con verbos de acción"]
+        "propositos": ["prop 1", "prop 2", "prop 3", "prop 4"],
+        "saberes": ["saber 1", "saber 2", "saber 3"],
+        "objetivos": ["obj 1", "obj 2", "obj 3", "obj 4", "obj 5"]
       },
       "clases": [
         {
-          "nombre": "Título de la Clase",
-          "inicio": "Inicio (mínimo 100 palabras). Recuperación de saberes y motivación.",
-          "desarrollo": "BLOQUE DE ACTIVIDADES PRÁCTICAS. Mínimo 400 palabras dedicadas EXCLUSIVAMENTE a las actividades. Generar EXACTAMENTE ${formData.cantActividades} actividades numeradas. CADA ACTIVIDAD debe tener: 1) NOMBRE, 2) OBJETIVO, 3) CONSIGNA LITERAL (ejercicios, problemas, textos), 4) TIEMPO ESTIMADO. Prohibido usar prosa narrativa o descripciones de lo que el docente hace.",
-          "cierre": "Cierre con síntesis y consigna para la próxima clase.",
-          "metacognicion": ["3 preguntas de reflexión"],
-          "errores_intervenciones": ["3 errores comunes y cómo intervenirlos"],
-          "diferenciacion": "Estrategia para niveles avanzados y alumnos con dificultades.",
+          "nombre": "Clase 1",
+          "inicio": "Breve introducción. Usa formato HTML (<b>, <ul>, <li>) para listar los pasos o momentos iniciales con prolijidad.",
+          "desarrollo": "Desarrollo pedagógico completo. NO uses la palabra 'Bloque'. Escribe las consignas literales para el alumno de forma secuencial. Es OBLIGATORIO estructurar el contenido separando las actividades y consignas en ÍTEMS utilizando etiquetas HTML (<ul>, <ol>, <li>, <b>, <br>) para garantizar la máxima legibilidad y prolijidad visual. Incluye todos los ejercicios, problemas y explicaciones necesarias como si fuera la hoja de trabajo final. Integra activamente los recursos encontrados en la web para crear problemas reales.",
+          "cierre": "Cierre o síntesis. Estructurado también en viñetas HTML (<ul><li>...</li></ul>) para mayor claridad.",
+          "metacognicion": ["preg 1", "preg 2", "preg 3"],
+          "errores_intervenciones": ["error 1", "error 2", "error 3"],
+          "diferenciacion": "...",
           "recursos_audiovisuales": {
             "youtube": [{ "titulo": "...", "url_sugerida": "..." }]
           }
         }
       ],
       "evaluacion": {
-        "criterios": ["Lista de criterios..."],
+        "criterios": ["crit 1", "crit 2"],
         "rubrica": [{ "criterio": "...", "inicial": "...", "basico": "...", "satisfactorio": "...", "destacado": "..." }],
-        "instrumentos": ["Instrumentos de evaluación..."]
+        "instrumentos": ["inst 1", "inst 2"]
       },
-      "bibliografia": ["Lista en formato APA 7"]
+      "bibliografia": ["cita 1", "cita 2"]
     }
 
     ═══════════════════════════════════
-    NORMAS DE CALIDAD Y ESTILO:
+    NORMAS DE CALIDAD Y ESTILO (CRÍTICO):
     ═══════════════════════════════════
-    1. FOCO EN LA ACTIVIDAD: El apartado "desarrollo" NO es una descripción de la clase, es un BANCO DE ACTIVIDADES.
-       - Prohibido: "El docente explica y luego los alumnos hacen un ejercicio..."
-       - Obligatorio: "Actividad 1: [Consigna detallada con todos sus datos]. Actividad 2: [Problema complejo]..."
-    2. ESPECIFICIDAD TOTAL: Prohibido usar frases como "Se debatirán los contenidos" o "Se realizarán ejercicios de práctica". 
-       DEBES escribir el TEXTO EXACTO que el alumno tendrá en su hoja: problemas, cálculos, fragmentos de lectura, consignas de escritura.
-    3. DENSIDAD DE CONTENIDO: Cada actividad debe ser lo suficientemente extensa para que el alumno trabaje de forma autónoma.
-    4. CITAS: Fundamentación con citas (Autor, Año). Bibliografía APA 7.
-    5. CANTIDAD: Generar EXACTAMENTE ${formData.numClases} clases y ${formData.cantActividades} actividades por clase.
-    6. WIZARD CONTEXT: Usa las respuestas del docente como guía prioritaria:
-       ${wizardAnswers ? Object.entries(wizardAnswers).map(([id, answer]) => `- ${id}: ${answer}`).join('\n') : 'No se proveyeron respuestas adicionales.'}
+    1. ESPECIFICIDAD RADICAL: Prohibido usar prosa narrativa genérica. Escribe las ACTIVIDADES Y PROBLEMAS COMPLETOS.
+    2. INTEGRACIÓN WEB: Extrae ejercicios de 'searchContext' y adáptalos. No solo los menciones, ESCRÍBELOS en el desarrollo.
+    3. SIN ESTRUCTURAS TÉCNICAS: NO uses la palabra 'Bloque', ni 'Sección', ni encabezados h1/h2 dentro de las clases. El desarrollo debe leerse como una secuencia de trabajo fluida para el alumno.
+    4. DENSIDAD Y FORMATO (!!): El desarrollo debe ser un banco de ejercicios listo para imprimir y usar. DEBES USAR HTML (<ul>, <ol>, <li>, <b>) para separar cada actividad en ítems listados. Esto es para que la visualización sea extremadamente prolija y ordenada.
+    5. CANTIDAD: Generar EXACTAMENTE ${formData.numClases} clases y una gran variedad de ejercicios por clase.
 
     ${searchContext}
 
-    RESPONDE SOLO EL JSON PURO. Sin bloques markdown, sin texto adicional.
+    RESPONDE SOLO EL JSON PURO.
   `;
 
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    let response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: MODEL_PREMIUM,
         messages: [
           {
             role: "system",
-            content: "Eres un generador de secuencias didácticas que solo responde en formato JSON."
+            content: "Eres un experto pedagogo que genera secuencias didácticas en formato JSON ESTRICTO. Nunca incluyas texto fuera del JSON."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        temperature: 0.75,
-        response_format: { type: "json_object" }
+        temperature: 0.4,
+        response_format: { type: "json_object" },
+        stream: !!onProgress
       })
     });
+
+    // Fallback if rate limited
+    if (response.status === 429) {
+      console.warn("Rate limit on 70b, falling back to 8b...");
+      response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: MODEL_ECONOMY,
+          messages: [
+            {
+              role: "system",
+              content: "Eres un experto pedagogo que genera secuencias didácticas en formato JSON ESTRICTO. Nunca incluyas texto fuera del JSON."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.4,
+          response_format: { type: "json_object" },
+          stream: !!onProgress
+        })
+      });
+    }
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || "Error en la API de Groq");
     }
 
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    return JSON.parse(content);
+    if (onProgress) {
+      return await processAIStream(response, onProgress);
+    } else {
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      return JSON.parse(content);
+    }
   } catch (error) {
-    console.error("Error generating generic planning:", error);
+    console.error("Error in generatePlanning:", error);
     throw error;
   }
 };
 
-/**
- * Generates 5 personalized wizard questions based on form data using AI.
- * Questions are contextual to the subject, topic, and cycle.
- */
 export const generateWizardQuestions = async (formData) => {
-  const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-  const MODEL = "llama-3.3-70b-versatile";
-
   const prompt = `
     Sos un experto pedagogo con 20 años de experiencia en educación secundaria técnica.
     Un docente de ${formData.materia} para ${formData.ciclo} ${formData.año}, va a crear una secuencia didáctica sobre:
@@ -164,80 +187,100 @@ export const generateWizardQuestions = async (formData) => {
     - Diagnosticar el punto de partida de los alumnos con ESTE TEMA CONCRETO.
     - Descubrir qué tipo de actividades o problemas reales son más útiles para ESTA MATERIA.
     - Identificar dificultades conocidas en ${formData.materia} para ${formData.ciclo}.
-    - Entender si hay un producto final o proyecto.
-    - Conocer la modalidad de trabajo preferida.
-
+ 
     MUY IMPORTANTE: Las preguntas deben ser CONCRETAS y referenciar directamente la materia, el eje temático y el nivel.
-    NO hagas preguntas genéricas como "¿Cuál es tu metodología?"
-    SÍ haz preguntas como "¿Tus alumnos ya trabajaron con [concepto específico de la materia]?" o
-    "¿Qué tipo de errores cometen más al resolver [tipo de problema concreto]?"
-
     Responde ÚNICAMENTE con un JSON válido, sin texto extra:
     {
       "preguntas": [
         {
           "id": "q1",
-          "label": "Texto completo de la pregunta (que mencione el tema o materia específica)",
-          "placeholder": "Ejemplo de respuesta esperada muy concreta y útil para el generador",
+          "label": "Text",
+          "placeholder": "Placeholder",
           "tipo": "textarea"
-        },
-        {
-          "id": "q2",
-          "label": "...",
-          "placeholder": "...",
-          "tipo": "texto"
-        },
-        {
-          "id": "q3",
-          "label": "...",
-          "placeholder": "...",
-          "tipo": "select",
-          "opciones": ["Opción 1", "Opción 2", "Opción 3", "Opción 4"]
-        },
-        { "id": "q4", "label": "...", "placeholder": "...", "tipo": "textarea" },
-        { "id": "q5", "label": "...", "placeholder": "...", "tipo": "textarea" }
+        }
       ]
     }
-    Los tipos posibles son: "textarea", "texto", "select" (solo para pregunta 3).
-    Para las de tipo "select", agregá un array "opciones" con 4-5 valores contextuales a la materia.
   `;
 
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    let response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: "Eres un generador de preguntas pedagógicas que solo responde en formato JSON puro." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.8,
+        model: MODEL_PREMIUM,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
         response_format: { type: "json_object" }
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || "Error al generar preguntas");
+    if (response.status === 429) {
+      response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: MODEL_ECONOMY,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          response_format: { type: "json_object" }
+        })
+      });
     }
 
+    if (!response.ok) throw new Error("Error in Wizard Questions");
     const data = await response.json();
-    const content = data.choices[0].message.content;
-    const parsed = JSON.parse(content);
-    return parsed.preguntas || [];
+    return JSON.parse(data.choices[0].message.content).preguntas;
   } catch (error) {
-    console.error("Error generating wizard questions:", error);
-    // Return fallback questions if AI fails
-    return [
-      { id: 'q1', label: `¿Cuál es el punto de partida de tus alumnos con "${formData.tematica}"?`, placeholder: 'Ej: Ya conocen los conceptos básicos, pero no la aplicación práctica...', tipo: 'textarea' },
-      { id: 'q2', label: '¿Qué tipo de problemas o situaciones querés priorizar?', placeholder: 'Ej: Problemas de la vida real, ejercicios de cálculo, análisis de textos...', tipo: 'textarea' },
-      { id: 'q3', label: 'Modalidad de trabajo en clase', placeholder: '', tipo: 'select', opciones: ['Individual', 'Grupal (parejas)', 'Grupal (equipos de 3-4)', 'Mixta (individual y grupal)', 'Plenaria / Clase colectiva'] },
-      { id: 'q4', label: '¿Hay un proyecto o producto final al terminar la secuencia?', placeholder: 'Ej: Una maqueta, un informe escrito, una exposición oral...', tipo: 'textarea' },
-      { id: 'q5', label: `¿Qué dificultades comunes tienen tus alumnos con "${formData.tematica}"?`, placeholder: 'Ej: Confunden X con Y, no recuerdan las fórmulas...', tipo: 'textarea' },
-    ];
+    console.error("Wizard error:", error);
+    throw error;
+  }
+};
+
+export const generateEvaluation = async (sequenceData, instructions = "") => {
+  const prompt = `Genera una evaluación para esta secuencia: ${JSON.stringify(sequenceData.encabezado)}. Instrucciones: ${instructions}`;
+
+  try {
+    let response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: MODEL_PREMIUM,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.4,
+        response_format: { type: "json_object" }
+      })
+    });
+
+    if (response.status === 429) {
+      response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: MODEL_ECONOMY,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.4,
+          response_format: { type: "json_object" }
+        })
+      });
+    }
+
+    if (!response.ok) throw new Error("Error in Evaluation");
+    const data = await response.json();
+    return JSON.parse(data.choices[0].message.content);
+  } catch (error) {
+    console.error("Evaluation error:", error);
+    throw error;
   }
 };

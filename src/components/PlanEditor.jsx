@@ -1,5 +1,8 @@
-import React from 'react';
-import { ChevronDown, ChevronUp, Youtube, Image as ImageIcon, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp, Youtube, Image as ImageIcon, X, Search, Sparkles } from 'lucide-react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import ImageSearchModal from './ImageSearchModal';
 
 const Accordion = ({ title, children, isOpen, onClick }) => (
     <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
@@ -10,6 +13,18 @@ const Accordion = ({ title, children, isOpen, onClick }) => (
         {isOpen && <div className="p-4 pt-0 animate-slide-down">{children}</div>}
     </div>
 );
+
+const quillModules = {
+    toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['clean']
+    ],
+};
+
+const quillFormats = [
+    'bold', 'italic', 'underline', 'list', 'bullet'
+];
 
 const ListEditor = ({ label, items, onUpdate }) => {
     const handleItemChange = (idx, val) => {
@@ -24,8 +39,8 @@ const ListEditor = ({ label, items, onUpdate }) => {
             {(items || []).map((item, idx) => (
                 <div key={idx} className="flex gap-2">
                     <span className="text-slate-300 pt-1 text-xs">•</span>
-                    <textarea
-                        className="w-full p-2 text-xs border border-slate-100 rounded-lg"
+                    <input
+                        className="w-full p-2 text-xs border border-slate-100 rounded-lg outline-none focus:ring-1 focus:ring-forest-500"
                         value={item}
                         onChange={(e) => handleItemChange(idx, e.target.value)}
                     />
@@ -36,10 +51,48 @@ const ListEditor = ({ label, items, onUpdate }) => {
 };
 
 const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [currentClassIdx, setCurrentClassIdx] = useState(null);
+
     if (!data) return null;
 
+    const handleOpenSearch = (idx) => {
+        setCurrentClassIdx(idx);
+        setIsSearchOpen(true);
+    };
+
+    const handleSelectImage = (url) => {
+        if (currentClassIdx !== null) {
+            const newClases = [...data.clases];
+            newClases[currentClassIdx].imagen_url = url;
+            // Clear local upload if exists
+            delete newClases[currentClassIdx].imagen;
+            onUpdate('clases', newClases);
+        }
+        setIsSearchOpen(false);
+    };
+
     return (
-        <div className="animate-fade-in space-y-4">
+        <div className="animate-fade-in space-y-4 quill-custom-editor">
+            <style>{`
+                .quill-custom-editor .ql-container {
+                    font-family: 'Inter', sans-serif !important;
+                    font-size: 13px !important;
+                    border-bottom-left-radius: 12px;
+                    border-bottom-right-radius: 12px;
+                    background: white;
+                }
+                .quill-custom-editor .ql-toolbar {
+                    border-top-left-radius: 12px;
+                    border-top-right-radius: 12px;
+                    background: #f8fafc;
+                    border-color: #e2e8f0 !important;
+                }
+                .quill-custom-editor .ql-container.ql-snow {
+                    border-color: #e2e8f0 !important;
+                }
+            `}</style>
+
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-bold text-slate-700">Edición en tiempo real</h2>
                 <span className="text-[10px] text-forest-600 font-bold bg-forest-50 px-2 py-1 rounded-md">CAMBIOS SE GUARDAN AL PDF</span>
@@ -50,10 +103,13 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                 isOpen={editingSection === 'fund'}
                 onClick={() => setEditingSection(editingSection === 'fund' ? null : 'fund')}
             >
-                <textarea
-                    className="w-full h-40 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none"
-                    value={data.fundamentacion}
-                    onChange={(e) => onUpdate('fundamentacion', e.target.value)}
+                <ReactQuill
+                    theme="snow"
+                    value={data.fundamentacion || ''}
+                    onChange={(val) => onUpdate('fundamentacion', val)}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className="h-44 mb-12"
                 />
             </Accordion>
 
@@ -63,8 +119,8 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                 onClick={() => setEditingSection(editingSection === 'goals' ? null : 'goals')}
             >
                 <div className="space-y-4">
-                    <ListEditor label="Propósitos" items={data.estructura.propositos} onUpdate={(val) => onUpdate('estructura.propositos', val)} />
-                    <ListEditor label="Objetivos" items={data.estructura.objetivos} onUpdate={(val) => onUpdate('estructura.objetivos', val)} />
+                    <ListEditor label="Propósitos" items={data.estructura?.propositos || []} onUpdate={(val) => onUpdate('estructura.propositos', val)} />
+                    <ListEditor label="Objetivos" items={data.estructura?.objetivos || []} onUpdate={(val) => onUpdate('estructura.objetivos', val)} />
                 </div>
             </Accordion>
 
@@ -73,7 +129,7 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                 isOpen={editingSection === 'classes'}
                 onClick={() => setEditingSection(editingSection === 'classes' ? null : 'classes')}
             >
-                {data.clases.map((clase, idx) => (
+                {(data.clases || []).map((clase, idx) => (
                     <div key={idx} className="mb-8 p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 shadow-inner">
                         <div className="flex items-center justify-between">
                             <h4 className="text-[10px] font-black text-forest-700 uppercase tracking-widest">Clase {idx + 1}</h4>
@@ -85,8 +141,9 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                                 className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none"
                                 value={clase.nombre}
                                 onChange={(e) => {
-                                    const newClases = [...data.clases];
-                                    newClases[idx].nombre = e.target.value;
+                                    const newClases = data.clases.map((c, i) =>
+                                        i === idx ? { ...c, nombre: e.target.value } : c
+                                    );
                                     onUpdate('clases', newClases);
                                 }}
                             />
@@ -95,40 +152,52 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase">Inicio / Apertura</label>
-                                <textarea
-                                    className="w-full h-24 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
-                                    value={clase.inicio}
-                                    onChange={(e) => {
-                                        const newClases = [...data.clases];
-                                        newClases[idx].inicio = e.target.value;
+                                <ReactQuill
+                                    theme="snow"
+                                    value={clase.inicio || ''}
+                                    onChange={(val) => {
+                                        const newClases = data.clases.map((c, i) =>
+                                            i === idx ? { ...c, inicio: val } : c
+                                        );
                                         onUpdate('clases', newClases);
                                     }}
+                                    modules={quillModules}
+                                    formats={quillFormats}
+                                    className="bg-white rounded-xl"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase">Desarrollo de Actividades</label>
-                                <textarea
-                                    className="w-full h-48 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
-                                    value={clase.desarrollo}
-                                    onChange={(e) => {
-                                        const newClases = [...data.clases];
-                                        newClases[idx].desarrollo = e.target.value;
+                                <ReactQuill
+                                    theme="snow"
+                                    value={clase.desarrollo || ''}
+                                    onChange={(val) => {
+                                        const newClases = data.clases.map((c, i) =>
+                                            i === idx ? { ...c, desarrollo: val } : c
+                                        );
                                         onUpdate('clases', newClases);
                                     }}
+                                    modules={quillModules}
+                                    formats={quillFormats}
+                                    className="bg-white rounded-xl"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase">Cierre / Síntesis</label>
-                                <textarea
-                                    className="w-full h-24 p-3 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-forest-500 outline-none resize-none"
-                                    value={clase.cierre}
-                                    onChange={(e) => {
-                                        const newClases = [...data.clases];
-                                        newClases[idx].cierre = e.target.value;
+                                <ReactQuill
+                                    theme="snow"
+                                    value={clase.cierre || ''}
+                                    onChange={(val) => {
+                                        const newClases = data.clases.map((c, i) =>
+                                            i === idx ? { ...c, cierre: val } : c
+                                        );
                                         onUpdate('clases', newClases);
                                     }}
+                                    modules={quillModules}
+                                    formats={quillFormats}
+                                    className="bg-white rounded-xl"
                                 />
                             </div>
                         </div>
@@ -148,8 +217,9 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                                         className="flex-1 p-2 text-[10px] border border-slate-200 rounded-lg"
                                         value={clase.youtube_url || ''}
                                         onChange={(e) => {
-                                            const newClases = [...data.clases];
-                                            newClases[idx].youtube_url = e.target.value;
+                                            const newClases = data.clases.map((c, i) =>
+                                                i === idx ? { ...c, youtube_url: e.target.value } : c
+                                            );
                                             onUpdate('clases', newClases);
                                         }}
                                     />
@@ -165,8 +235,9 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                                             className="text-[9px] font-bold text-forest-700 bg-forest-50 border border-forest-200 rounded px-2 py-0.5 outline-none"
                                             value={clase.imagen_posicion || 'desarrollo'}
                                             onChange={(e) => {
-                                                const newClases = [...data.clases];
-                                                newClases[idx].imagen_posicion = e.target.value;
+                                                const newClases = data.clases.map((c, i) =>
+                                                    i === idx ? { ...c, imagen_posicion: e.target.value } : c
+                                                );
                                                 onUpdate('clases', newClases);
                                             }}
                                         >
@@ -214,17 +285,29 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                                         </label>
                                     )}
                                     <div className="flex-1 space-y-2">
-                                        <input
-                                            placeholder="O pega una URL de imagen aquí..."
-                                            className="w-full p-2 text-[10px] border border-slate-200 rounded-lg"
-                                            value={clase.imagen_url || ''}
-                                            onChange={(e) => {
-                                                const newClases = [...data.clases];
-                                                newClases[idx].imagen_url = e.target.value;
-                                                onUpdate('clases', newClases);
-                                            }}
-                                        />
-                                        <p className="text-[9px] text-slate-400 leading-tight">Sube una imagen o pega un enlace directo. Se incluirá en el PDF final.</p>
+                                        <div className="flex gap-2">
+                                            <input
+                                                placeholder="O pega una URL de imagen aquí..."
+                                                className="flex-1 p-2 text-[10px] border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-forest-500"
+                                                value={clase.imagen_url || ''}
+                                                onChange={(e) => {
+                                                    const newClases = [...data.clases];
+                                                    newClases[idx].imagen_url = e.target.value;
+                                                    onUpdate('clases', newClases);
+                                                }}
+                                            />
+                                            <button
+                                                onClick={() => handleOpenSearch(idx)}
+                                                className="bg-forest-50 text-forest-700 border border-forest-100 p-2 rounded-lg hover:bg-forest-100 transition-colors group relative"
+                                                title="Buscar imagen con IA"
+                                            >
+                                                <div className="flex items-center gap-1.5 px-1">
+                                                    <Sparkles size={12} className="animate-pulse" />
+                                                    <span className="text-[9px] font-black uppercase">Buscar con IA</span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                        <p className="text-[9px] text-slate-400 leading-tight">Sube una imagen, pega un enlace o usa nuestro buscador inteligente para encontrar recursos visuales.</p>
                                     </div>
                                 </div>
                             </div>
@@ -232,6 +315,13 @@ const PlanEditor = ({ data, onUpdate, editingSection, setEditingSection }) => {
                     </div>
                 ))}
             </Accordion>
+
+            <ImageSearchModal
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
+                onSelect={handleSelectImage}
+                initialQuery={currentClassIdx !== null && data.clases?.[currentClassIdx] ? data.clases[currentClassIdx].nombre : ''}
+            />
         </div>
     );
 };

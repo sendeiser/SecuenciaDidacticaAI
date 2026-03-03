@@ -1,8 +1,9 @@
 import { Page, Text, View, Document, StyleSheet, Image, Link } from '@react-pdf/renderer';
+import Html from 'react-pdf-html';
 
 const styles = StyleSheet.create({
     page: {
-        padding: 72, // 1 inch approx
+        padding: 72,
         fontSize: 10,
         fontFamily: 'Helvetica',
         color: '#000',
@@ -10,7 +11,7 @@ const styles = StyleSheet.create({
     },
     topBorder: {
         borderTopWidth: 2,
-        borderTopColor: '#064e3b', // Dark emerald
+        borderTopColor: '#064e3b',
         marginBottom: 15,
     },
     headerWrapper: {
@@ -66,6 +67,7 @@ const styles = StyleSheet.create({
     listText: {
         flex: 1,
         textAlign: 'left',
+        fontSize: 9,
     },
     paragraph: {
         marginBottom: 10,
@@ -87,7 +89,7 @@ const styles = StyleSheet.create({
         minHeight: 30,
     },
     tableHeaderRow: {
-        backgroundColor: '#e6f3e6', // Soft green to keep original vibe but professional
+        backgroundColor: '#e6f3e6',
     },
     tableCol: {
         padding: 4,
@@ -133,7 +135,6 @@ const styles = StyleSheet.create({
         fontSize: 7,
         color: '#94a3b8',
     },
-    // Formal Minimalist Class Design
     classCard: {
         marginBottom: 25,
         paddingBottom: 15,
@@ -151,12 +152,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         paddingTop: 5,
     },
-    activityBlock: {
-        marginTop: 6,
-        paddingLeft: 10,
-        borderLeftWidth: 1,
-        borderLeftColor: '#f1f5f9',
-    },
     sectionLabel: {
         fontSize: 8,
         fontWeight: 'bold',
@@ -167,17 +162,23 @@ const styles = StyleSheet.create({
     }
 });
 
-// Converts any AI field safely to a string (AI sometimes returns objects or arrays)
+// Simplified for HTML content
 const safeText = (val) => {
     if (!val) return '';
-    if (typeof val === 'string') return val;
-    if (Array.isArray(val)) return val.join('\n');
-    if (typeof val === 'object') {
-        return Object.entries(val)
-            .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`)
-            .join('\n\n');
+    let text = '';
+    if (typeof val === 'string') {
+        text = val;
+    } else if (Array.isArray(val)) {
+        text = val.map(v => `• ${v}`).join('<br/>');
+    } else {
+        text = String(val);
     }
-    return String(val);
+
+    // Ensure text is wrapped in a tag for consistent styling
+    if (!text.trim().startsWith('<')) {
+        return `<p>${text}</p>`;
+    }
+    return text;
 };
 
 const PlantillaETA = ({ data }) => {
@@ -205,9 +206,10 @@ const PlantillaETA = ({ data }) => {
                     <View style={{ marginTop: 5, flexDirection: 'row', flexWrap: 'wrap' }}>
                         <Text style={{ width: '50%', marginBottom: 3 }}><Text style={styles.label}>Docente:</Text> {data.encabezado.docente}</Text>
                         <Text style={{ width: '50%', marginBottom: 3 }}><Text style={styles.label}>DNI:</Text> {data.encabezado.dni}</Text>
-                        <Text style={{ width: '50%' }}><Text style={styles.label}>Ciclo:</Text> {data.encabezado.ciclo}</Text>
+                        <Text style={{ width: '50%', marginBottom: 3 }}><Text style={styles.label}>Teléfono:</Text> {data.encabezado.telefono}</Text>
+                        <Text style={{ width: '50%', marginBottom: 3 }}><Text style={styles.label}>Ciclo:</Text> {data.encabezado.ciclo}</Text>
                         <Text style={{ width: '50%' }}><Text style={styles.label}>Año:</Text> {data.encabezado.año}</Text>
-                        <Text style={{ width: '100%', marginTop: 3 }}><Text style={styles.label}>Año Lectivo:</Text> {data.encabezado.anio_lectivo}</Text>
+                        <Text style={{ width: '50%' }}><Text style={styles.label}>Año Lectivo:</Text> {data.encabezado.anio_lectivo}</Text>
                     </View>
 
                     <Text style={{ marginTop: 10 }}>
@@ -222,7 +224,7 @@ const PlantillaETA = ({ data }) => {
                 <View style={styles.section}>
                     <Text style={styles.sectionHeading}>1. Puntos de partida</Text>
                     {data.puntos_partida.map((punto, i) => (
-                        <View key={i} style={styles.listItem}>
+                        <View key={i} style={styles.listItem} wrap={false}>
                             <Text style={styles.bullet}>•</Text>
                             <Text style={styles.listText}>{punto}</Text>
                         </View>
@@ -232,40 +234,52 @@ const PlantillaETA = ({ data }) => {
                 {/* 2. Fundamentación */}
                 <View style={styles.section}>
                     <Text style={styles.sectionHeading}>2. Fundamentación de la Secuencia Didáctica</Text>
-                    <Text style={styles.paragraph}>{data.fundamentacion}</Text>
+                    <View style={{ marginTop: 2 }}>
+                        <Html stylesheet={{
+                            p: { fontSize: 8, fontWeight: 400, marginBottom: 8, textAlign: 'justify', lineHeight: 1.4 },
+                            div: { fontSize: 8, fontWeight: 400 },
+                            span: { fontSize: 8, fontWeight: 400 },
+                            strong: { fontWeight: 'bold' },
+                            b: { fontWeight: 'bold' }
+                        }}>
+                            {safeText(data.fundamentacion)}
+                        </Html>
+                    </View>
                 </View>
 
                 {/* Estructura de la Secuencia Didáctica */}
-                <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 10 }}>
-                    <Text style={[styles.mainTitle, { color: '#064e3b', fontSize: 10, marginBottom: 15 }]}>ESTRUCTURA DE LA SECUENCIA DIDÁCTICA</Text>
+                {data.estructura && (
+                    <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 10 }}>
+                        <Text style={[styles.mainTitle, { color: '#064e3b', fontSize: 10, marginBottom: 15 }]}>ESTRUCTURA DE LA SECUENCIA DIDÁCTICA</Text>
 
-                    {/* A. Propósitos */}
-                    <Text style={styles.sectionHeading}>A. Propósitos</Text>
-                    {data.estructura.propositos.map((item, i) => (
-                        <View key={i} style={styles.listItem}>
-                            <Text style={styles.bullet}>•</Text>
-                            <Text style={styles.listText}>{item}</Text>
-                        </View>
-                    ))}
+                        {/* A. Propósitos */}
+                        <Text style={styles.sectionHeading}>A. Propósitos</Text>
+                        {(data.estructura.propositos || []).map((item, i) => (
+                            <View key={i} style={styles.listItem} wrap={false}>
+                                <Text style={styles.bullet}>•</Text>
+                                <Text style={styles.listText}>{item}</Text>
+                            </View>
+                        ))}
 
-                    {/* B. Saberes */}
-                    <Text style={styles.sectionHeading}>B. Saberes / Contenidos</Text>
-                    {data.estructura.saberes.map((item, i) => (
-                        <View key={i} style={styles.listItem}>
-                            <Text style={styles.bullet}>•</Text>
-                            <Text style={styles.listText}>{item}</Text>
-                        </View>
-                    ))}
+                        {/* B. Saberes */}
+                        <Text style={styles.sectionHeading}>B. Saberes / Contenidos</Text>
+                        {(data.estructura.saberes || []).map((item, i) => (
+                            <View key={i} style={styles.listItem} wrap={false}>
+                                <Text style={styles.bullet}>•</Text>
+                                <Text style={styles.listText}>{item}</Text>
+                            </View>
+                        ))}
 
-                    {/* C. Objetivos */}
-                    <Text style={styles.sectionHeading}>C. Objetivos</Text>
-                    {data.estructura.objetivos.map((item, i) => (
-                        <View key={i} style={styles.listItem}>
-                            <Text style={styles.bullet}>•</Text>
-                            <Text style={styles.listText}>{item}</Text>
-                        </View>
-                    ))}
-                </View>
+                        {/* C. Objetivos */}
+                        <Text style={styles.sectionHeading}>C. Objetivos</Text>
+                        {(data.estructura.objetivos || []).map((item, i) => (
+                            <View key={i} style={styles.listItem} wrap={false}>
+                                <Text style={styles.bullet}>•</Text>
+                                <Text style={styles.listText}>{item}</Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
 
                 {/* D. Plan de Clases */}
                 <View style={styles.section}>
@@ -278,7 +292,7 @@ const PlantillaETA = ({ data }) => {
                             {['inicio', 'desarrollo', 'cierre'].map((sectionKey) => (
                                 <View key={sectionKey} style={styles.sectionBox}>
                                     <Text style={styles.sectionLabel}>
-                                        {sectionKey === 'inicio' ? '📍 Apertura' : sectionKey === 'desarrollo' ? '📝 Desarrollo' : '🏁 Cierre'}
+                                        {sectionKey === 'inicio' ? 'Apertura' : sectionKey === 'desarrollo' ? 'Desarrollo' : 'Cierre'}
                                     </Text>
 
                                     {/* Image if position matches current section */}
@@ -286,7 +300,20 @@ const PlantillaETA = ({ data }) => {
                                         <Image src={clase.imagen || clase.imagen_url} style={styles.classImage} />
                                     )}
 
-                                    <Text style={[styles.paragraph, { lineHeight: 1.7, fontSize: 9.5, color: '#000' }]}>{safeText(clase[sectionKey])}</Text>
+                                    <View style={{ marginTop: 2 }}>
+                                        <Html stylesheet={{
+                                            p: { fontSize: 8, fontWeight: 400, marginBottom: 4, lineHeight: 1.3 },
+                                            li: { fontSize: 8, fontWeight: 400, marginBottom: 2, lineHeight: 1.3 },
+                                            div: { fontSize: 8, fontWeight: 400 },
+                                            span: { fontSize: 8, fontWeight: 400 },
+                                            strong: { fontWeight: 'bold' },
+                                            b: { fontWeight: 'bold' },
+                                            h1: { fontSize: 9, fontWeight: 'bold', marginBottom: 4 },
+                                            h2: { fontSize: 8.5, fontWeight: 'bold', marginBottom: 3 }
+                                        }}>
+                                            {safeText(clase[sectionKey])}
+                                        </Html>
+                                    </View>
 
                                     {sectionKey === 'desarrollo' && (
                                         <>
@@ -320,40 +347,42 @@ const PlantillaETA = ({ data }) => {
                 </View>
 
                 {/* E. Evaluación */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeading}>E. Evaluación</Text>
+                {data.evaluacion && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionHeading}>E. Evaluación</Text>
 
-                    <Text style={[styles.subSectionHeading, { marginBottom: 10 }]}>Rúbrica de Desempeño:</Text>
-                    <View style={styles.table}>
-                        <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                            <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCellHeader}>CRITERIOS</Text></View>
-                            <View style={[styles.tableCol, { width: '75%', borderRightWidth: 0 }]}><Text style={styles.tableCellHeader}>NIVELES DE DESEMPEÑO</Text></View>
-                        </View>
-                        <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                            <View style={[styles.tableCol, { width: '25%' }]}></View>
-                            <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>INICIAL</Text></View>
-                            <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>BÁSICO</Text></View>
-                            <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>SATISFACTORIO</Text></View>
-                            <View style={[styles.tableCol, { width: '18.75%', borderRightWidth: 0 }]}><Text style={styles.tableCellHeader}>DESTACADO</Text></View>
-                        </View>
-                        {(data.evaluacion.rubrica || []).map((row, i) => (
-                            <View key={i} style={[styles.tableRow, { borderBottomWidth: i === (data.evaluacion.rubrica?.length - 1) ? 0 : 1 }]}>
-                                <View style={[styles.tableCol, { width: '25%' }]}><Text style={[styles.tableCell, { fontWeight: 'bold' }]}>{row.criterio}</Text></View>
-                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.inicial}</Text></View>
-                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.basico}</Text></View>
-                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.satisfactorio}</Text></View>
-                                <View style={[styles.tableCol, { width: '18.75%', borderRightWidth: 0 }]}><Text style={styles.tableCell}>{row.destacado}</Text></View>
+                        <Text style={[styles.subSectionHeading, { marginBottom: 10 }]}>Rúbrica de Desempeño:</Text>
+                        <View style={styles.table}>
+                            <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                                <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCellHeader}>CRITERIOS</Text></View>
+                                <View style={[styles.tableCol, { width: '75%', borderRightWidth: 0 }]}><Text style={styles.tableCellHeader}>NIVELES DE DESEMPEÑO</Text></View>
                             </View>
-                        ))}
-                    </View>
+                            <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                                <View style={[styles.tableCol, { width: '25%' }]}></View>
+                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>INICIAL</Text></View>
+                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>BÁSICO</Text></View>
+                                <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCellHeader}>SATISFACTORIO</Text></View>
+                                <View style={[styles.tableCol, { width: '18.75%', borderRightWidth: 0 }]}><Text style={styles.tableCellHeader}>DESTACADO</Text></View>
+                            </View>
+                            {(data.evaluacion.rubrica || []).map((row, i) => (
+                                <View key={i} style={[styles.tableRow, { borderBottomWidth: i === (data.evaluacion.rubrica?.length - 1) ? 0 : 1 }]}>
+                                    <View style={[styles.tableCol, { width: '25%' }]}><Text style={[styles.tableCell, { fontWeight: 'bold' }]}>{row.criterio}</Text></View>
+                                    <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.inicial}</Text></View>
+                                    <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.basico}</Text></View>
+                                    <View style={[styles.tableCol, { width: '18.75%' }]}><Text style={styles.tableCell}>{row.satisfactorio}</Text></View>
+                                    <View style={[styles.tableCol, { width: '18.75%', borderRightWidth: 0 }]}><Text style={styles.tableCell}>{row.destacado}</Text></View>
+                                </View>
+                            ))}
+                        </View>
 
-                    <View style={{ marginTop: 15 }}>
-                        <Text style={[styles.label, { fontSize: 9, marginBottom: 5 }]}>Instrumentos de Evaluación:</Text>
-                        {(data.evaluacion.instrumentos || []).map((ins, i) => (
-                            <Text key={i} style={[styles.paragraph, { marginBottom: 2, fontSize: 8 }]}>• {ins}</Text>
-                        ))}
+                        <View style={{ marginTop: 15 }}>
+                            <Text style={[styles.label, { fontSize: 9, marginBottom: 5 }]}>Instrumentos de Evaluación:</Text>
+                            {(data.evaluacion.instrumentos || []).map((ins, i) => (
+                                <Text key={i} style={[styles.paragraph, { marginBottom: 2, fontSize: 8 }]}>• {ins}</Text>
+                            ))}
+                        </View>
                     </View>
-                </View>
+                )}
 
                 {/* F. Bibliografía */}
                 <View style={styles.section}>

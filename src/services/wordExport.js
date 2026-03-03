@@ -15,8 +15,16 @@ import {
 } from "docx";
 import { saveAs } from "file-saver";
 
-export const exportToWord = async (data) => {
-    if (!data) return;
+const stripHtml = (html) => {
+    if (!html) return "";
+    return html.replace(/<[^>]*>?/gm, '');
+};
+
+/**
+ * Generates a Word document Blob for a given sequence data.
+ */
+export const generateWordBlob = async (data) => {
+    if (!data) return null;
 
     const doc = new Document({
         sections: [
@@ -71,6 +79,18 @@ export const exportToWord = async (data) => {
                                     }),
                                 ]
                             }),
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: "TELÉFONO:", bold: true }), new TextRun(` ${data.encabezado.telefono} `)] })],
+                                        borders: { bottom: { style: BorderStyle.SINGLE, size: 1 } }
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: "EMAIL:", bold: true }), new TextRun(` ${data.encabezado.email} `)] })],
+                                        borders: { bottom: { style: BorderStyle.SINGLE, size: 1 } }
+                                    }),
+                                ]
+                            }),
                         ]
                     }),
 
@@ -106,7 +126,7 @@ export const exportToWord = async (data) => {
 
                     // --- 2. FUNDAMENTACIÓN ---
                     new Paragraph({ text: "2. Fundamentación de la Secuencia Didáctica", heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 120 } }),
-                    new Paragraph({ text: data.fundamentacion, alignment: AlignmentType.LEFT, spacing: { after: 300 } }),
+                    new Paragraph({ text: stripHtml(data.fundamentacion), alignment: AlignmentType.LEFT, spacing: { after: 300 } }),
 
                     // --- ESTRUCTURA ---
                     new Paragraph({
@@ -145,13 +165,13 @@ export const exportToWord = async (data) => {
                             border: { bottom: { color: "E2E8F0", space: 1, style: BorderStyle.SINGLE, size: 6 } }
                         }),
                         new Paragraph({ text: "📍 Apertura", bold: true, spacing: { before: 150 } }),
-                        new Paragraph({ text: clase.inicio, indent: { left: 240 }, alignment: AlignmentType.LEFT }),
+                        new Paragraph({ text: stripHtml(clase.inicio), indent: { left: 240 }, alignment: AlignmentType.LEFT }),
 
                         new Paragraph({ text: "📝 Desarrollo", bold: true, spacing: { before: 150 } }),
-                        new Paragraph({ text: clase.desarrollo, indent: { left: 240 }, alignment: AlignmentType.LEFT }),
+                        new Paragraph({ text: stripHtml(clase.desarrollo), indent: { left: 240 }, alignment: AlignmentType.LEFT }),
 
                         new Paragraph({ text: "🏁 Cierre", bold: true, spacing: { before: 150 } }),
-                        new Paragraph({ text: clase.cierre, indent: { left: 240 }, alignment: AlignmentType.LEFT }),
+                        new Paragraph({ text: stripHtml(clase.cierre), indent: { left: 240 }, alignment: AlignmentType.LEFT }),
 
                         new Paragraph({ text: "Diferenciación:", italics: true, spacing: { before: 100 } }),
                         new Paragraph({ text: clase.diferenciacion, indent: { left: 240 }, size: 18, color: "64748B" }),
@@ -227,6 +247,124 @@ export const exportToWord = async (data) => {
         ],
     });
 
-    const blob = await Packer.toBlob(doc);
-    saveAs(blob, `Secuencia_${data.encabezado.materia}_${data.encabezado.docente}.docx`);
+    return await Packer.toBlob(doc);
+};
+
+/**
+ * Generates a Word document Blob for an evaluation / exam.
+ */
+export const generateEvaluationWordBlob = async (evalData, sequenceData) => {
+    if (!evalData || !sequenceData) return null;
+
+    const encabezado = sequenceData.encabezado;
+
+    const doc = new Document({
+        sections: [
+            {
+                properties: {
+                    page: {
+                        margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+                    },
+                },
+                children: [
+                    // Academic Header
+                    new Paragraph({
+                        text: encabezado.institucion.toUpperCase(),
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 120 },
+                    }),
+                    new Paragraph({
+                        text: encabezado.materia,
+                        alignment: AlignmentType.CENTER,
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { after: 120 },
+                    }),
+                    new Paragraph({
+                        text: `Docente: ${encabezado.docente} | DNI: ${encabezado.dni} | Teléfono: ${encabezado.telefono}`,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 120 },
+                    }),
+                    new Paragraph({
+                        text: `Ciclo: ${encabezado.ciclo} | Año: ${encabezado.año}`,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 },
+                    }),
+
+                    // Evaluation Title
+                    new Paragraph({
+                        text: evalData.titulo,
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 200, after: 400 },
+                    }),
+
+                    // Student Info Box
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: "ALUMNO/A: ", bold: true }), new TextRun("____________________________________")] })],
+                                        borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } },
+                                        padding: { top: 100, bottom: 100, left: 100 }
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: "CURSO: ", bold: true }), new TextRun("__________")] })],
+                                        borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } },
+                                        padding: { top: 100, bottom: 100, left: 100 }
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: "FECHA: ", bold: true }), new TextRun("___/___/___")] })],
+                                        borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } },
+                                        padding: { top: 100, bottom: 100, left: 100 }
+                                    }),
+                                ]
+                            }),
+                        ]
+                    }),
+
+                    // Content
+                    new Paragraph({ text: "", spacing: { before: 400 } }),
+                    new Paragraph({
+                        text: stripHtml(evalData.contenido_html),
+                        spacing: { after: 400 },
+                        alignment: AlignmentType.LEFT
+                    }),
+
+                    // Footer
+                    new Paragraph({
+                        text: "Maestro de Secuencias | Planificación Inteligente",
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 600 },
+                        size: 14,
+                        color: "94A3B8"
+                    })
+                ],
+            },
+        ],
+    });
+
+    return await Packer.toBlob(doc);
+};
+
+/**
+ * Exports a single sequence as a Word document.
+ */
+export const exportToWord = async (data) => {
+    const blob = await generateWordBlob(data);
+    if (blob) {
+        saveAs(blob, `Secuencia_${data.encabezado.materia}_${data.encabezado.docente || 'Docente'}.docx`);
+    }
+};
+
+/**
+ * Exports an evaluation as a Word document.
+ */
+export const exportEvaluationToWord = async (evalData, sequenceData) => {
+    const blob = await generateEvaluationWordBlob(evalData, sequenceData);
+    if (blob) {
+        saveAs(blob, `Evaluacion_${sequenceData.encabezado.materia}_${evalData.titulo?.replace(/\s+/g, '_')}.docx`);
+    }
 };
